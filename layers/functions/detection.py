@@ -42,7 +42,8 @@ class Detect(Function):
             decoded_boxes = decode(loc_data[i], prior_data, self.variance)
             # For each class, perform nms
             conf_scores = conf_preds[i].clone()
-
+            #print('decoded boxes ', decoded_boxes)
+            #print('conf scores', conf_scores)
             for cl in range(1, self.num_classes):
                 c_mask = conf_scores[cl].gt(self.conf_thresh)
                 scores = conf_scores[cl][c_mask]
@@ -51,6 +52,9 @@ class Detect(Function):
                 l_mask = c_mask.unsqueeze(1).expand_as(decoded_boxes)
                 boxes = decoded_boxes[l_mask].view(-1, 4)
                 # idx of highest scoring and non-overlapping boxes per class
+
+                # TODO: print('boxes ', boxes)
+                # TODO: When boxes is empty then this function returns nothing. Causes error.
                 ids, count = nms(boxes, scores, self.nms_thresh, self.top_k)
                 output[i, cl, :count] = \
                     torch.cat((scores[ids[:count]].unsqueeze(1),
