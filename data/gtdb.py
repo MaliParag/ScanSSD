@@ -10,7 +10,7 @@ import torch.utils.data as data
 import cv2
 import numpy as np
 
-GTDB_CLASSES = (  # always index 0
+GTDB_CLASSES = (  # always index 0 is background
     'math')
 
 GTDB_ROOT = osp.join(HOME, "data/GTDB/")
@@ -27,8 +27,7 @@ class GTDBAnnotationTransform(object):
     """
 
     def __init__(self, class_to_ind=None):
-        self.class_to_ind = class_to_ind or dict(
-            zip(GTDB_CLASSES, range(len(GTDB_CLASSES))))
+        pass
 
     def __call__(self, target, width, height):
         """
@@ -41,7 +40,7 @@ class GTDBAnnotationTransform(object):
 
         # read the annotations
         for box in target:
-            res += [box[0], box[1], box[2], box[3], 0]
+            res.append([box[0]/width, box[1]/height, box[2]/width, box[3]/height, 0])
 
         return res  # [[xmin, ymin, xmax, ymax, label_ind], ... ]
 
@@ -63,21 +62,20 @@ class GTDBDetection(data.Dataset):
     """
 
     def __init__(self, root,
-                 image_sets=['train'],
+                 image_set='train',
                  transform=None, target_transform=GTDBAnnotationTransform(),
                  dataset_name='GTDB'):
         self.root = root
-        self.image_set = image_sets
+        self.image_set = image_set
         self.transform = transform
         self.target_transform = target_transform
         self.name = dataset_name
-        self._annopath = osp.join('%s', 'annotations', 'Borcherds86', '%s.pmath')
-        self._imgpath = osp.join('%s', 'images', 'Borcherds86', '%s.png')
+        self._annopath = osp.join('%s', 'annotations', '%s.pmath')
+        self._imgpath = osp.join('%s', 'images', '%s.png')
         self.ids = list()
 
-        rootpath = "data/GTDB/";
-        for line in open(osp.join(rootpath, 'train')):
-            self.ids.append((rootpath, line.strip()))
+        for line in open(osp.join(root, image_set)):
+            self.ids.append((root, line.strip()))
 
     def __getitem__(self, index):
         im, gt, h, w = self.pull_item(index)
@@ -89,7 +87,8 @@ class GTDBDetection(data.Dataset):
     def pull_item(self, index):
         img_id = self.ids[index]
 
-        target = 0
+        target = self.read_annotations(self._annopath % img_id)
+
         img = cv2.imread(self._imgpath % img_id)
         height, width, channels = img.shape
 
@@ -122,7 +121,7 @@ class GTDBDetection(data.Dataset):
         return cv2.imread(self._imgpath % img_id, cv2.IMREAD_COLOR)
         #return cv2.imread('/home/psm2208/Workspace/test/output.jpg', cv2.IMREAD_COLOR)
 
-    def pull_anno(self, index):
+    def pull_anno(self, index, type='train'):
         '''Returns the original annotation of image at index
 
         Note: not using self.__getitem__(), as any transformations passed in
@@ -135,9 +134,25 @@ class GTDBDetection(data.Dataset):
                 eg: ('001718', [('dog', (96, 13, 438, 332))])
         '''
         img_id = self.ids[index]
-        anno = 0
-        gt = self.target_transform(anno, 1, 1)
+        gt = []
+
+        if type == 'train':
+            anno = self.read_annotations(self._annopath % img_id)
+            gt = self.target_transform(anno, 1, 1)
+
         return img_id[1], gt
+
+    def read_annotations(self, path):
+
+        annotations_file = open(path, "r");
+
+        annotations = []
+
+        for line in annotations_file:
+            line = line.split(",")
+            annotations.append([float(line[0]), float(line[1]), float(line[2]), float(line[3])])
+
+        return annotations
 
     def pull_tensor(self, index):
         '''Returns the original image at an index in tensor form

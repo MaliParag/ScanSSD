@@ -23,8 +23,8 @@ def str2bool(v):
 parser = argparse.ArgumentParser(
     description='Single Shot MultiBox Detector Training With Pytorch')
 train_set = parser.add_mutually_exclusive_group()
-parser.add_argument('--dataset', default='VOC', choices=['VOC', 'COCO'],
-                    type=str, help='VOC or COCO')
+parser.add_argument('--dataset', default='VOC', choices=['VOC', 'COCO', 'GTDB'],
+                    type=str, help='VOC, COCO or GTDB')
 parser.add_argument('--dataset_root', default=VOC_ROOT,
                     help='Dataset root directory path')
 parser.add_argument('--basenet', default='vgg16_reducedfc.pth',
@@ -87,6 +87,13 @@ def train():
         dataset = VOCDetection(root=args.dataset_root,
                                transform=SSDAugmentation(cfg['min_dim'],
                                                          MEANS))
+    elif args.dataset == 'GTDB':
+        if args.dataset_root == COCO_ROOT:
+            parser.error('Must specify dataset if specifying dataset_root')
+        cfg = gtdb
+        dataset = GTDBDetection(root=args.dataset_root,
+                                transform=SSDAugmentation(cfg['min_dim'],
+                                                          MEANS))
 
     if args.visdom:
         import visdom
@@ -196,9 +203,9 @@ def train():
             update_vis_plot(iteration, loss_l.item(), loss_c.item(),
                             iter_plot, epoch_plot, 'append')
 
-        if iteration != 0 and iteration % 1000 == 0:
+        if iteration != 0 and iteration % 30 == 0:
             print('Saving state, iter:', iteration)
-            torch.save(ssd_net.state_dict(), 'weights/ssd300_COCO_' +
+            torch.save(ssd_net.state_dict(), 'weights/ssd300_GTDB_' +
                        repr(iteration) + '.pth')
     torch.save(ssd_net.state_dict(),
                args.save_folder + '' + args.dataset + '.pth')

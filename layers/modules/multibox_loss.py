@@ -91,6 +91,10 @@ class MultiBoxLoss(nn.Module):
 
         # Compute max conf across batch for hard negative mining
         batch_conf = conf_data.view(-1, self.num_classes)
+
+        #print('conf_t view ', conf_t.view(-1, 1))
+        #print('conf_t ' + conf_t.view(-1, 1))
+
         loss_c = log_sum_exp(batch_conf) - batch_conf.gather(1, conf_t.view(-1, 1))
 
         # Hard Negative Mining
