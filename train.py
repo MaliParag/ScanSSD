@@ -39,9 +39,9 @@ parser.add_argument('--num_workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True, type=str2bool,
                     help='Use CUDA to train model')
-parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float,
+parser.add_argument('--lr', '--learning-rate', default=1e-4, type=float,
                     help='initial learning rate')
-parser.add_argument('--momentum', default=0.9, type=float,
+parser.add_argument('--momentum', default=0.6, type=float,
                     help='Momentum value for optim')
 parser.add_argument('--weight_decay', default=5e-4, type=float,
                     help='Weight decay for SGD')
@@ -177,8 +177,10 @@ def train():
         #images, targets = next(batch_iterator)
 
         if args.cuda:
-            images = Variable(images.cuda())
-            targets = [Variable(ann.cuda(), volatile=True) for ann in targets]
+            #images = Variable(images.cuda())
+            #targets = [Variable(ann.cuda(), volatile=True) for ann in targets]
+            images = images.cuda()
+            targets = [ann.cuda() for ann in targets]
         else:
             images = Variable(images)
             targets = [Variable(ann, volatile=True) for ann in targets]
@@ -223,7 +225,7 @@ def adjust_learning_rate(optimizer, gamma, step):
 
 
 def xavier(param):
-    init.xavier_uniform(param)
+    init.xavier_uniform_(param)
 
 
 def weights_init(m):

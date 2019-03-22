@@ -13,6 +13,7 @@ from PIL import Image
 from data import *
 import torch.utils.data as data
 from ssd import build_ssd
+from utils import draw_boxes
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')
 parser.add_argument('--trained_model', default='weights/ssd300_GTDB_990.pth',
@@ -63,9 +64,11 @@ def test_net(save_folder, net, cuda, testset, transform, thresh):
         scale = torch.Tensor([img.shape[1], img.shape[0],
                              img.shape[1], img.shape[0]])
         pred_num = 0
+        boxes = []
+
         for i in range(detections.size(1)):
             j = 0
-            while j < detections.size(2) and detections[0, i, j, 0] >= 0.6: #TODO it was 0.6
+            while j < detections.size(2) and detections[0, i, j, 0] >= thresh: #TODO it was 0.6
                 if pred_num == 0:
                     with open(filename, mode='a') as f:
                         f.write('PREDICTIONS: '+'\n')
@@ -73,11 +76,14 @@ def test_net(save_folder, net, cuda, testset, transform, thresh):
                 label_name = labelmap[i-1]
                 pt = (detections[0, i, j, 1:]*scale).cpu().numpy()
                 coords = (pt[0], pt[1], pt[2], pt[3])
+                boxes.append(coords);
                 pred_num += 1
                 with open(filename, mode='a') as f:
                     f.write(str(pred_num)+' label: '+label_name+' score: ' +
                             str(score) + ' '+' || '.join(str(c) for c in coords) + '\n')
                 j += 1
+
+        draw_boxes(img, boxes, os.path.join("eval", img_id + ".png"))
 
 
 def test_voc():
