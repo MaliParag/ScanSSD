@@ -38,25 +38,50 @@ gtdb = {
     'num_classes': 2,
     'lr_steps': (80000, 100000, 120000),
     'max_iter': 120000,
-    'feature_maps': [128, 64, 32],
+    'feature_maps': [128, 64, 32, 16, 14, 12],
     'min_dim': 1024,
     'steps': [8, 16, 32, 64, 100, 300],
-    'min_sizes': [10, 40, 100],
-    'max_sizes': [40, 100, 300],
-    'aspect_ratios': [[2], [2, 3, 5], [2, 3, 5]],
+    'min_sizes': [5, 20, 50, 80, 120, 160],
+    'max_sizes': [20, 50, 80, 120, 160, 200],
+    'aspect_ratios': [[2], [2], [2], [2, 3, 5], [2, 3, 5], [2, 3, 5]],
     'variance': [0.1, 0.2],
     'clip': True,
     'name': 'GTDB',
     'is_vertical_prior_boxes_enabled': False,
     'mbox': {
-        '1024': [3, 5, 5],
-        '300': [3, 5, 5],  # number of boxes per feature map location
+        '1024': [3, 3, 3, 5, 5, 5],
+        '300': [3, 5, 5, 5, 3, 3],  # number of boxes per feature map location
     },
     'extras': {
-        '1024': [256, 'S', 512, 128],
-        '300': [256, 'S', 512, 128],
+        '1024': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
+        '300': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
     }
 }
+
+
+# gtdb = {
+#     'num_classes': 2,
+#     'lr_steps': (80000, 100000, 120000),
+#     'max_iter': 120000,
+#     'feature_maps': [128, 64, 32, 16, 14, 12],
+#     'min_dim': 1024,
+#     'steps': [8, 16, 32, 64, 100, 300],
+#     'min_sizes': [5, 20, 50, 80, 120, 160],
+#     'max_sizes': [20, 50, 80, 120, 160, 200],
+#     'aspect_ratios': [[2], [2], [2], [2, 3, 5], [2, 3, 5], [2, 3, 5]],
+#     'variance': [0.1, 0.2],
+#     'clip': True,
+#     'name': 'GTDB',
+#     'is_vertical_prior_boxes_enabled': False,
+#     'mbox': {
+#         '1024': [3, 3, 3, 5, 5, 5],
+#         '300': [3, 5, 5, 5, 3, 3],  # number of boxes per feature map location
+#     },
+#     'extras': {
+#         '1024': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
+#         '300': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
+#     }
+# }
 
 coco = {
     'num_classes': 201,

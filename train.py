@@ -52,6 +52,9 @@ parser.add_argument('--visdom', default=False, type=str2bool,
                     help='Use visdom for loss visualization')
 parser.add_argument('--save_folder', default='weights/',
                     help='Directory for saving checkpoint models')
+parser.add_argument('--layers_to_freeze', default=20, type=float,
+                    help='Number of VGG16 layers to freeze')
+
 args = parser.parse_args()
 
 
@@ -110,7 +113,7 @@ def train():
         print(child)
         child.requires_grad = False
         ct += 1
-        if ct > 15:
+        if ct > args.layers_to_freeze:
             break
 
     if args.cuda:
@@ -279,4 +282,5 @@ def update_vis_plot(iteration, loc, viz, conf, window1, window2, update_type,
         )
 
 if __name__ == '__main__':
+    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     train()

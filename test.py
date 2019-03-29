@@ -125,4 +125,5 @@ def test_gtdb():
 
 if __name__ == '__main__':
     #test_voc()
+    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     test_gtdb()
