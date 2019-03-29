@@ -3,8 +3,6 @@ matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from PIL import Image
-import numpy as np
 
 
 def draw_boxes(im, boxes, path):
@@ -29,6 +27,7 @@ def draw_boxes(im, boxes, path):
 
     #plt.show()
     plt.savefig(path, dpi=600)
+    plt.close()
 
 
 if __name__ == "__main__":

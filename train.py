@@ -19,7 +19,6 @@ import argparse
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
-
 parser = argparse.ArgumentParser(
     description='Single Shot MultiBox Detector Training With Pytorch')
 train_set = parser.add_mutually_exclusive_group()
@@ -36,15 +35,17 @@ parser.add_argument('--resume', default=None, type=str,
 parser.add_argument('--start_iter', default=0, type=int,
                     help='Resume training at this iter')
 parser.add_argument('--num_workers', default=4, type=int,
-                    help='Number of workers used in dataloading')
+                    help='Number of workers used in data loading')
 parser.add_argument('--cuda', default=True, type=str2bool,
                     help='Use CUDA to train model')
 parser.add_argument('--lr', '--learning-rate', default=1e-4, type=float,
                     help='initial learning rate')
-parser.add_argument('--momentum', default=0.6, type=float,
+parser.add_argument('--momentum', default=0.9, type=float,
                     help='Momentum value for optim')
 parser.add_argument('--weight_decay', default=5e-4, type=float,
                     help='Weight decay for SGD')
+parser.add_argument('--alpha', default=1.0, type=float,
+                    help='Alpha for the multibox loss')
 parser.add_argument('--gamma', default=0.1, type=float,
                     help='Gamma update for SGD')
 parser.add_argument('--visdom', default=False, type=str2bool,
@@ -99,8 +100,18 @@ def train():
         import visdom
         viz = visdom.Visdom()
 
-    ssd_net = build_ssd('train', cfg['min_dim'], cfg['num_classes'])
+    ssd_net = build_ssd('train', cfg, cfg['min_dim'], cfg['num_classes'])
     net = ssd_net
+    print(net)
+
+    ct = 0
+    # freeze first 15 layers
+    for child in net.vgg.children():
+        print(child)
+        child.requires_grad = False
+        ct += 1
+        if ct > 15:
+            break
 
     if args.cuda:
         net = torch.nn.DataParallel(ssd_net)
@@ -146,8 +157,8 @@ def train():
     if args.visdom:
         vis_title = 'SSD.PyTorch on ' + dataset.name
         vis_legend = ['Loc Loss', 'Conf Loss', 'Total Loss']
-        iter_plot = create_vis_plot('Iteration', 'Loss', vis_title, vis_legend)
-        epoch_plot = create_vis_plot('Epoch', 'Loss', vis_title, vis_legend)
+        iter_plot = create_vis_plot('Iteration', 'Loss', viz, vis_title, vis_legend)
+        epoch_plot = create_vis_plot('Epoch', 'Loss', viz, vis_title, vis_legend)
 
     data_loader = data.DataLoader(dataset, args.batch_size,
                                   num_workers=args.num_workers,
@@ -156,13 +167,16 @@ def train():
     # create batch iterator
     batch_iterator = iter(data_loader)
     for iteration in range(args.start_iter, cfg['max_iter']):
+
+        t0 = time.time()
+
         if args.visdom and iteration != 0 and (iteration % epoch_size == 0):
-            update_vis_plot(epoch, loc_loss, conf_loss, epoch_plot, None,
+            epoch += 1
+            update_vis_plot(epoch, loc_loss, viz, conf_loss, epoch_plot, None,
                             'append', epoch_size)
             # reset epoch loss counters
             loc_loss = 0
             conf_loss = 0
-            epoch += 1
 
         if iteration in cfg['lr_steps']:
             step_index += 1
@@ -185,27 +199,27 @@ def train():
             images = Variable(images)
             targets = [Variable(ann, volatile=True) for ann in targets]
         # forward
-        t0 = time.time()
         out = net(images)
         # backprop
         optimizer.zero_grad()
         loss_l, loss_c = criterion(out, targets)
-        loss = loss_l + loss_c
+        loss = args.alpha * loss_l + loss_c
         loss.backward()
         optimizer.step()
-        t1 = time.time()
         loc_loss += loss_l.item()#data[0]
         conf_loss += loss_c.item()#data[0]
+
+        t1 = time.time()
 
         if iteration % 10 == 0:
             print('timer: %.4f sec.' % (t1 - t0))
             print('iter ' + repr(iteration) + ' || Loss: %.4f ||' % (loss.item()), end=' ')
 
         if args.visdom:
-            update_vis_plot(iteration, loss_l.item(), loss_c.item(),
+            update_vis_plot(iteration, loss_l.item(), viz, loss_c.item(),
                             iter_plot, epoch_plot, 'append')
 
-        if iteration != 0 and iteration % 30 == 0:
+        if iteration != 0 and iteration % 10 == 0:
             print('Saving state, iter:', iteration)
             torch.save(ssd_net.state_dict(), 'weights/ssd300_GTDB_' +
                        repr(iteration) + '.pth')
@@ -234,7 +248,7 @@ def weights_init(m):
         m.bias.data.zero_()
 
 
-def create_vis_plot(_xlabel, _ylabel, _title, _legend):
+def create_vis_plot(_xlabel, _ylabel, viz, _title, _legend):
     return viz.line(
         X=torch.zeros((1,)).cpu(),
         Y=torch.zeros((1, 3)).cpu(),
@@ -247,7 +261,7 @@ def create_vis_plot(_xlabel, _ylabel, _title, _legend):
     )
 
 
-def update_vis_plot(iteration, loc, conf, window1, window2, update_type,
+def update_vis_plot(iteration, loc, viz, conf, window1, window2, update_type,
                     epoch_size=1):
     viz.line(
         X=torch.ones((1, 3)).cpu() * iteration,
@@ -263,7 +277,6 @@ def update_vis_plot(iteration, loc, conf, window1, window2, update_type,
             win=window2,
             update=True
         )
-
 
 if __name__ == '__main__':
     train()

@@ -21,12 +21,14 @@ class PriorBox(object):
         self.aspect_ratios = cfg['aspect_ratios']
         self.clip = cfg['clip']
         self.version = cfg['name']
+        self.is_vertical_prior_boxes_enabled = cfg['is_vertical_prior_boxes_enabled']
         for v in self.variance:
             if v <= 0:
                 raise ValueError('Variances must be greater than 0')
 
     def forward(self):
         mean = []
+
         for k, f in enumerate(self.feature_maps):
             for i, j in product(range(f), repeat=2):
                 f_k = self.image_size / self.steps[k]
@@ -47,7 +49,10 @@ class PriorBox(object):
                 # rest of aspect ratios
                 for ar in self.aspect_ratios[k]:
                     mean += [cx, cy, s_k*sqrt(ar), s_k/sqrt(ar)]
-                    mean += [cx, cy, s_k/sqrt(ar), s_k*sqrt(ar)]
+
+                    if self.is_vertical_prior_boxes_enabled:
+                        mean += [cx, cy, s_k/sqrt(ar), s_k*sqrt(ar)]
+
         # back to torch land
         output = torch.Tensor(mean).view(-1, 4)
         if self.clip:

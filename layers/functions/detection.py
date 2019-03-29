@@ -1,8 +1,6 @@
 import torch
 from torch.autograd import Function
 from ..box_utils import decode, nms
-from data import voc as cfg
-
 
 class Detect(Function):
     """At test time, Detect is the final layer of SSD.  Decode location preds,
@@ -10,7 +8,7 @@ class Detect(Function):
     scores and threshold to a top_k number of output predictions for both
     confidence score and locations.
     """
-    def __init__(self, num_classes, bkg_label, top_k, conf_thresh, nms_thresh):
+    def __init__(self, cfg, num_classes, bkg_label, top_k, conf_thresh, nms_thresh):
         self.num_classes = num_classes
         self.background_label = bkg_label
         self.top_k = top_k

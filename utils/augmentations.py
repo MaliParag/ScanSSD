@@ -4,7 +4,8 @@ import cv2
 import numpy as np
 import types
 from numpy import random
-
+from matplotlib import pyplot as plt
+from PIL import Image, ImageOps
 
 def intersect(box_a, box_b):
     max_xy = np.minimum(box_a[:, 2:], box_b[2:])
@@ -106,8 +107,15 @@ class Resize(object):
         self.size = size
 
     def __call__(self, image, boxes=None, labels=None):
+        # plt.imshow(image)
+        # plt.savefig("eval/bface.png", dpi=600)
+        # plt.close()
+
         image = cv2.resize(image, (self.size,
                                  self.size))
+        # plt.imshow(image)
+        # plt.savefig("eval/face.png", dpi=600)
+        # plt.close()
         return image, boxes, labels
 
 
@@ -404,10 +412,10 @@ class SSDAugmentation(object):
         self.augment = Compose([
             ConvertFromInts(),
             ToAbsoluteCoords(),
-            PhotometricDistort(),
+            #PhotometricDistort(),
             #Expand(self.mean),
             #RandomSampleCrop(),
-            RandomMirror(),
+            #RandomMirror(),
             ToPercentCoords(),
             Resize(self.size),
             #SubtractMeans(self.mean)
