@@ -13,7 +13,7 @@ from PIL import Image
 from data import *
 import torch.utils.data as data
 from ssd import build_ssd
-from utils import draw_boxes
+from utils import draw_boxes, helpers
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')
 parser.add_argument('--trained_model', default='weights/ssd300_GTDB_990.pth',
@@ -22,7 +22,7 @@ parser.add_argument('--save_folder', default='eval/', type=str,
                     help='Dir to save results')
 parser.add_argument('--visual_threshold', default=0.6, type=float,
                     help='Final confidence threshold')
-parser.add_argument('--cuda', default=True, type=bool,
+parser.add_argument('--cuda', default=False, type=bool,
                     help='Use cuda to train model')
 parser.add_argument('--dataset_root', default=VOC_ROOT, help='Location of VOC root directory')
 parser.add_argument('-f', default=None, type=str, help="Dummy arg so we can load in Jupyter Notebooks")
@@ -37,7 +37,7 @@ if not os.path.exists(args.save_folder):
     os.mkdir(args.save_folder)
 
 
-def test_net(save_folder, net, cuda, testset, transform, thresh):
+def test_net(save_folder, net, cuda, gpu_id, testset, transform, thresh):
     # dump predictions and assoc. ground truth to text file for now
     filename = save_folder+'test1.txt'
     #num_images = len(testset)
@@ -51,13 +51,13 @@ def test_net(save_folder, net, cuda, testset, transform, thresh):
         img = testset.pull_image(i)
         img_id, annotation = testset.pull_anno(i, 'test')
         x = torch.from_numpy(transform(img)[0]).permute(2, 0, 1)
-        x = Variable(x.unsqueeze(0))
+        x = x.unsqueeze(0)
 
         f.write('\nFOR: '+img_id+'\n')
         for box in annotation:
             f.write('label: '+' || '.join(str(b) for b in box)+'\n')
         if cuda:
-            x = x.cuda()
+            x = x.to(gpu_id)
 
         y = net(x)      # forward pass
         detections = y.data
@@ -83,13 +83,14 @@ def test_net(save_folder, net, cuda, testset, transform, thresh):
                 j += 1
 
         draw_boxes(img, boxes, os.path.join("eval", img_id + ".png"))
+        del x
 
     f.close()
 
 def test_voc():
     # load net
     num_classes = len(VOC_CLASSES) + 1 # +1 background
-    net = build_ssd('test', 512, num_classes) # initialize SSD
+    net = build_ssd('test', 2048, num_classes) # initialize SSD
     net.load_state_dict(torch.load(args.trained_model))
     net.eval()
     print('Finished loading model!')
@@ -105,9 +106,15 @@ def test_voc():
 
 
 def test_gtdb():
+
+    gpu_id = 0
+    if args.cuda:
+        gpu_id = helpers.get_freer_gpu()
+        torch.cuda.set_device(gpu_id)
+
     # load net
     num_classes = 2 # +1 background
-    net = build_ssd('test', gtdb, 1024, num_classes) # initialize SSD
+    net = build_ssd('test', gtdb, gpu_id, 2048, num_classes) # initialize SSD
     net.load_state_dict(torch.load(args.trained_model))
     net.eval()
     print('Finished loading model!')
@@ -115,15 +122,18 @@ def test_gtdb():
     testset = GTDBDetection(args.dataset_root, 'test', None, GTDBAnnotationTransform())
     #testset = GTDBDetection(args.dataset_root, 'train', None, GTDBAnnotationTransform())
 
+
     if args.cuda:
-        net = net.cuda()
+        net = net.to(gpu_id)
         cudnn.benchmark = True
+
     # evaluation
-    test_net(args.save_folder, net, args.cuda, testset,
+    test_net(args.save_folder, net, args.cuda, gpu_id, testset,
              BaseTransform(net.size, (104, 117, 123)),
              thresh=args.visual_threshold)
 
 if __name__ == '__main__':
     #test_voc()
-    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+    #os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+    #torch.cuda.set_device(1)
     test_gtdb()

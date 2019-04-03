@@ -24,7 +24,7 @@ class SSD(nn.Module):
         head: "multibox head" consists of loc and conf conv layers
     """
 
-    def __init__(self, phase, cfg, size, base, extras, head, num_classes):
+    def __init__(self, phase, cfg, size, base, extras, head, num_classes, gpu_id):
         super(SSD, self).__init__()
         self.phase = phase
         self.num_classes = num_classes
@@ -33,6 +33,7 @@ class SSD(nn.Module):
         #self.priors = Variable(self.priorbox.forward(), volatile=True)
         with torch.no_grad():
             self.priors = self.priorbox.forward()
+            self.priors.to(gpu_id)
 
         self.size = size
 
@@ -111,6 +112,9 @@ class SSD(nn.Module):
                 conf.view(conf.size(0), -1, self.num_classes),
                 self.priors
             )
+
+        del sources, loc, conf
+
         return output
 
     def load_weights(self, base_file):
@@ -186,6 +190,10 @@ def multibox(vgg, extra_layers, cfg, num_classes):
 
 
 base = {
+    '4096': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
+             512, 512, 512],
+    '2048': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
+             512, 512, 512],
     '1024': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
             512, 512, 512],
     '512': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
@@ -204,7 +212,7 @@ base = {
 
 
 
-def build_ssd(phase, cfg, size=300, num_classes=21):
+def build_ssd(phase, cfg, gpu_id, size=300, num_classes=21):
     if phase != "test" and phase != "train":
         print("ERROR: Phase: " + phase + " not recognized")
         return
@@ -216,4 +224,4 @@ def build_ssd(phase, cfg, size=300, num_classes=21):
     base_, extras_, head_ = multibox(vgg(base[str(size)], 3),
                                      add_extras(cfg['extras'][str(size)], 1024),
                                      cfg['mbox'][str(size)], num_classes)
-    return SSD(phase, cfg, size, base_, extras_, head_, num_classes)
+    return SSD(phase, cfg, size, base_, extras_, head_, num_classes, gpu_id)

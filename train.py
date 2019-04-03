@@ -14,7 +14,7 @@ import torch.nn.init as init
 import torch.utils.data as data
 import numpy as np
 import argparse
-
+from utils import helpers
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -103,12 +103,19 @@ def train():
         import visdom
         viz = visdom.Visdom()
 
-    ssd_net = build_ssd('train', cfg, cfg['min_dim'], cfg['num_classes'])
+    gpu_id = 0
+
+    if args.cuda:
+        gpu_id = helpers.get_freer_gpu()
+        print('Using GPU with id ', gpu_id)
+        torch.cuda.set_device(gpu_id)
+
+    ssd_net = build_ssd('train', cfg, gpu_id, cfg['min_dim'], cfg['num_classes'])
     net = ssd_net
     print(net)
 
     ct = 0
-    # freeze first 15 layers
+    # freeze first few layers
     for child in net.vgg.children():
         print(child)
         child.requires_grad = False
@@ -117,7 +124,8 @@ def train():
             break
 
     if args.cuda:
-        net = torch.nn.DataParallel(ssd_net)
+        #net = torch.nn.DataParallel(ssd_net)
+        net = net.to(gpu_id)
         cudnn.benchmark = True
 
     if args.resume:
@@ -128,8 +136,8 @@ def train():
         print('Loading base network...')
         ssd_net.vgg.load_state_dict(vgg_weights)
 
-    if args.cuda:
-        net = net.cuda()
+    # if args.cuda:
+    #     net = net.cuda()
 
     if not args.resume:
         print('Initializing weights...')
@@ -282,5 +290,5 @@ def update_vis_plot(iteration, loc, viz, conf, window1, window2, update_type,
         )
 
 if __name__ == '__main__':
-    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+    #os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     train()
