@@ -1,6 +1,6 @@
 # Author: Parag Mali
 # This script divides a big image into smaller images using a sliding window.
-# It also divides corresponding bounding boxe annotations.
+# It also divides corresponding bounding box annotations.
 
 # read the image
 import numpy as np
@@ -75,8 +75,13 @@ def generate_subimages(pdf_name ='Alford94',
 
         image = cv2.resize(image, (intermediate_width, intermediate_height))
 
+        if page_id in boxes:
+            current_boxes = boxes[page_id]
+        else:
+            current_boxes = []
+
         # preprocess the boxes
-        for box in boxes[page_id]:
+        for box in current_boxes:
 
             box[0] = box[0] * intermediate_width_ratio
             box[1] = box[1] * intermediate_height_ratio
@@ -172,6 +177,8 @@ if __name__ == '__main__':
 
     # for each training image pdf file
     for pdf_name in training_pdf_names:
-        generate_subimages(pdf_name.strip())
+        pdf_name = pdf_name.strip()
+        if pdf_name != '':
+            generate_subimages(pdf_name.strip())
 
     training_pdf_names.close()
