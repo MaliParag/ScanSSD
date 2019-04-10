@@ -62,16 +62,21 @@ class GTDBDetection(data.Dataset):
     """
 
     def __init__(self, root,
-                 image_set='train',
+                 image_set='processed_train',
                  transform=None, target_transform=GTDBAnnotationTransform(),
                  dataset_name='GTDB'):
+
         self.root = root
         self.image_set = image_set
         self.transform = transform
         self.target_transform = target_transform
         self.name = dataset_name
-        self._annopath = osp.join('%s', 'annotations', '%s.pmath')
-        self._imgpath = osp.join('%s', 'images', '%s.png')
+        #self._annopath = osp.join('%s', 'annotations', '%s.pmath')
+        #self._imgpath = osp.join('%s', 'images', '%s.png')
+
+        self._annopath = osp.join('%s', 'processed_annotations', '%s.pmath')
+        self._imgpath = osp.join('%s', 'processed_images', '%s.png')
+
         self.ids = list()
 
         for line in open(osp.join(root, image_set)):
@@ -85,8 +90,9 @@ class GTDBDetection(data.Dataset):
         return len(self.ids)
 
     def pull_item(self, index):
-        img_id = self.ids[index]
 
+        # TODO: Can not handle the case, when target is none
+        img_id = self.ids[index]
         target = self.read_annotations(self._annopath % img_id)
 
         img = cv2.imread(self._imgpath % img_id)
@@ -102,6 +108,7 @@ class GTDBDetection(data.Dataset):
             img = img[:, :, (2, 1, 0)]
             # img = img.transpose(2, 0, 1)
             target = np.hstack((boxes, np.expand_dims(labels, axis=1)))
+
         return torch.from_numpy(img).permute(2, 0, 1), target, height, width
         # return torch.from_numpy(img), target, height, width
 

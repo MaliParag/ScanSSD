@@ -61,4 +61,4 @@ class Detect(Function):
         _, idx = flt[:, :, 0].sort(1, descending=True)
         _, rank = idx.sort(1)
         flt[(rank < self.top_k).unsqueeze(-1).expand_as(flt)].fill_(0)
-        return output
+        return output, boxes, scores

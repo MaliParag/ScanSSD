@@ -39,13 +39,16 @@ if not os.path.exists(args.save_folder):
 
 def test_net(save_folder, net, cuda, gpu_id, testset, transform, thresh):
     # dump predictions and assoc. ground truth to text file for now
-    filename = save_folder+'test1.txt'
+    filename = save_folder + 'detection_output.txt'
+    if os.path.isfile(filename):
+        os.remove(filename)
+
     #num_images = len(testset)
 
     f = open(filename, "w")
 
     ## TODO remove this line
-    num_images = 10
+    num_images = 200
     for i in range(num_images):
         print('Testing image {:d}/{:d}....'.format(i+1, num_images))
         img = testset.pull_image(i)
@@ -59,14 +62,15 @@ def test_net(save_folder, net, cuda, gpu_id, testset, transform, thresh):
         if cuda:
             x = x.to(gpu_id)
 
-        y = net(x)      # forward pass
+        y, debug_boxes, debug_scores = net(x)      # forward pass
         detections = y.data
         # scale each detection back up to the image
         scale = torch.Tensor([img.shape[1], img.shape[0],
                              img.shape[1], img.shape[0]])
         pred_num = 0
-        boxes = []
 
+        recognized_boxes = []
+        #[1,2,200,5] -> 1 is number of classes, 200 is top_k, 5 is bounding box with class label,
         for i in range(detections.size(1)):
             j = 0
             while j < detections.size(2) and detections[0, i, j, 0] >= thresh: #TODO it was 0.6
@@ -76,21 +80,21 @@ def test_net(save_folder, net, cuda, gpu_id, testset, transform, thresh):
                 label_name = labelmap[i-1]
                 pt = (detections[0, i, j, 1:]*scale).cpu().numpy()
                 coords = (pt[0], pt[1], pt[2], pt[3])
-                boxes.append(coords)
+                recognized_boxes.append(coords)
+                #confs.append(score)
                 pred_num += 1
                 f.write(str(pred_num)+' label: '+label_name+' score: ' +
                         str(score) + ' '+' || '.join(str(c) for c in coords) + '\n')
                 j += 1
 
-        draw_boxes(img, boxes, os.path.join("eval", img_id + ".png"))
-        del x
+        draw_boxes(img, recognized_boxes, debug_boxes, debug_scores, scale, os.path.join("eval", img_id + ".png"))
 
     f.close()
 
 def test_voc():
     # load net
     num_classes = len(VOC_CLASSES) + 1 # +1 background
-    net = build_ssd('test', 2048, num_classes) # initialize SSD
+    net = build_ssd('test', 300, num_classes) # initialize SSD
     net.load_state_dict(torch.load(args.trained_model))
     net.eval()
     print('Finished loading model!')
@@ -114,14 +118,14 @@ def test_gtdb():
 
     # load net
     num_classes = 2 # +1 background
-    net = build_ssd('test', gtdb, gpu_id, 2048, num_classes) # initialize SSD
-    net.load_state_dict(torch.load(args.trained_model))
+    net = build_ssd('test', gtdb, gpu_id, 300, num_classes) # initialize SSD
+    net.to(gpu_id)
+    net.load_state_dict(torch.load(args.trained_model, map_location={'cuda:0':'cuda:1'}))
     net.eval()
     print('Finished loading model!')
     # load data
-    testset = GTDBDetection(args.dataset_root, 'test', None, GTDBAnnotationTransform())
-    #testset = GTDBDetection(args.dataset_root, 'train', None, GTDBAnnotationTransform())
-
+    testset = GTDBDetection(args.dataset_root, 'processed_test', None, GTDBAnnotationTransform())
+    #testset = GTDBDetection(args.dataset_root, 'processed_train', None, GTDBAnnotationTransform())
 
     if args.cuda:
         net = net.to(gpu_id)

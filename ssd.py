@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from layers import *
 import os
-
+import numpy as np
 
 class SSD(nn.Module):
     """Single Shot Multibox Architecture
@@ -49,7 +49,7 @@ class SSD(nn.Module):
         if phase == 'test':
             self.softmax = nn.Softmax(dim=-1)
             #TODO self.detect = Detect(num_classes, 0, 200, 0.01, 0.45)
-            self.detect = Detect(cfg, num_classes, 0, 200, 0.00, 0.45)
+            self.detect = Detect(cfg, num_classes, 0, 200, 0.01, 0.45)
 
     def forward(self, x):
         """Applies network layers and ops on input image(s) x.
@@ -99,13 +99,16 @@ class SSD(nn.Module):
 
         loc = torch.cat([o.view(o.size(0), -1) for o in loc], 1)
         conf = torch.cat([o.view(o.size(0), -1) for o in conf], 1)
+
         if self.phase == "test":
-            output = self.detect(
+            output, boxes, scores = self.detect(
                 loc.view(loc.size(0), -1, 4),                   # loc preds
                 self.softmax(conf.view(conf.size(0), -1,
                              self.num_classes)),                # conf preds
                 self.priors.type(type(x.data))                  # default boxes
             )
+
+            return output, boxes.detach(), scores.detach()
         else:
             output = (
                 loc.view(loc.size(0), -1, 4),
@@ -113,9 +116,8 @@ class SSD(nn.Module):
                 self.priors
             )
 
-        del sources, loc, conf
+            return output
 
-        return output
 
     def load_weights(self, base_file):
         other, ext = os.path.splitext(base_file)

@@ -412,9 +412,9 @@ class SSDAugmentation(object):
         self.augment = Compose([
             ConvertFromInts(),
             ToAbsoluteCoords(),
-            #PhotometricDistort(),
-            #Expand(self.mean),
-            #RandomSampleCrop(),
+            PhotometricDistort(),
+            Expand(self.mean),
+            RandomSampleCrop(),
             #RandomMirror(),
             ToPercentCoords(),
             Resize(self.size),

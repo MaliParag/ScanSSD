@@ -73,31 +73,10 @@ if not os.path.exists(args.save_folder):
 
 
 def train():
-    if args.dataset == 'COCO':
-        if args.dataset_root == VOC_ROOT:
-            if not os.path.exists(COCO_ROOT):
-                parser.error('Must specify dataset_root if specifying dataset')
-            print("WARNING: Using default COCO dataset_root because " +
-                  "--dataset_root was not specified.")
-            args.dataset_root = COCO_ROOT
-        cfg = coco
-        dataset = COCODetection(root=args.dataset_root,
-                                transform=SSDAugmentation(cfg['min_dim'],
-                                                          MEANS))
-    elif args.dataset == 'VOC':
-        if args.dataset_root == COCO_ROOT:
-            parser.error('Must specify dataset if specifying dataset_root')
-        cfg = voc
-        dataset = VOCDetection(root=args.dataset_root,
-                               transform=SSDAugmentation(cfg['min_dim'],
-                                                         MEANS))
-    elif args.dataset == 'GTDB':
-        if args.dataset_root == COCO_ROOT:
-            parser.error('Must specify dataset if specifying dataset_root')
-        cfg = gtdb
-        dataset = GTDBDetection(root=args.dataset_root,
-                                transform=SSDAugmentation(cfg['min_dim'],
-                                                          MEANS))
+    cfg = gtdb
+    dataset = GTDBDetection(root=args.dataset_root,
+                            transform=SSDAugmentation(cfg['min_dim'],
+                                                      MEANS))
 
     if args.visdom:
         import visdom
@@ -117,11 +96,11 @@ def train():
     ct = 0
     # freeze first few layers
     for child in net.vgg.children():
-        print(child)
-        child.requires_grad = False
-        ct += 1
         if ct > args.layers_to_freeze:
             break
+
+        child.requires_grad = False
+        ct += 1
 
     if args.cuda:
         #net = torch.nn.DataParallel(ssd_net)
@@ -230,7 +209,7 @@ def train():
             update_vis_plot(iteration, loss_l.item(), viz, loss_c.item(),
                             iter_plot, epoch_plot, 'append')
 
-        if iteration != 0 and iteration % 10 == 0:
+        if iteration != 0 and iteration % 50 == 0:
             print('Saving state, iter:', iteration)
             torch.save(ssd_net.state_dict(), 'weights/ssd300_GTDB_' +
                        repr(iteration) + '.pth')
