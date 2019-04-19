@@ -2,15 +2,13 @@
 # This script stitches back the output generated on the image patches (sub-images)
 
 # read the image
-import numpy as np
 import cv2
-import copy
 import os
-import sys
 import csv
-from PIL import Image
 import numpy as np
 import utils.visualize as visualize
+import sys
+from multiprocessing import Pool
 
 # Default parameters for thr GTDB dataset
 intermediate_width = 4800
@@ -20,6 +18,7 @@ final_width = 300
 final_height = 300
 
 stride = 1
+
 n_horizontal = int(intermediate_width / crop_size)  # 4
 n_vertical = int(intermediate_height / crop_size)  # 5
 
@@ -32,7 +31,7 @@ def combine_math_regions(math_files_list, image_path, output_image):
 
     original_width = image.shape[1]
     original_height = image.shape[0]
-    print(original_height, original_width)
+    print('Read image with height, width : ', original_height, original_width)
 
     intermediate_width_ratio = original_width / intermediate_width
     intermediate_height_ratio = original_height / intermediate_height
@@ -47,19 +46,22 @@ def combine_math_regions(math_files_list, image_path, output_image):
             continue
 
         data = np.genfromtxt(math_file, delimiter=',')
-        data = data.reshape(-1,4)
-        data = data.astype(int)
+
+        # if there is only one entry convert it to correct form required
+        if len(data.shape) == 1:
+            data = data.reshape(1, -1)
+
+        #data = data.astype(int)
+
         annotations_map[name] = data
 
-    h = np.arange(0, n_horizontal - 1 + 0.1, 0.1);
-    v = np.arange(0, n_vertical - 1 + 0.1, 0.1)
+    h = np.arange(0, n_horizontal - 1 + stride, stride)
+    v = np.arange(0, n_vertical - 1 + stride, stride)
 
     for filename in annotations_map:
 
-        #filename = '968.pmath' #TODO
-
         data_arr = annotations_map[filename]
-        patch_num = int(filename.split("_")[-1].split(".pmath")[0])
+        patch_num = int(filename.split("_")[-1].split(".csv")[0])
 
         x_offset = h[(patch_num-1) % len(h)]
         y_offset = v[int((patch_num-1) / len(h))]
@@ -87,26 +89,19 @@ def combine_math_regions(math_files_list, image_path, output_image):
         data_arr[:, 3] = data_arr[:, 3] * intermediate_height_ratio
         annotations_map[filename] = data_arr
 
-        #break #TODO
-
     math_regions = np.array([])
 
     for key in annotations_map:
-
-        #TODO
-        #key = "968.pmath"
 
         if len(math_regions)==0:
             math_regions = annotations_map[key][:,:]
         else:
             math_regions = np.concatenate((math_regions, annotations_map[key]), axis=0)
 
-        #break
-
     math_regions = math_regions.astype(int)
     math_regions = math_regions.tolist()
 
-    print(len(math_regions))
+    print('Number of math regions ', len(math_regions))
 
     obsolete = []
 
@@ -132,10 +127,15 @@ def intersects(first, other):
                 first[1] > other[3] or
                 first[3] < other[1])
 
-def stitch_patches(pdf_name,
-                   image_dir='/home/psm2208/data/GTDB/images/',
-                   annotations_dir='/home/psm2208/data/GTDB/processed_annotations/',
-                   output_dir='/home/psm2208/code/eval/stitched_output'):
+def stitch_patches(args):
+
+    pdf_name, annotations_dir, output_dir, image_dir = args
+
+    print('Processing ', pdf_name)
+
+    #annotations_dir = '/home/psm2208/data/GTDB/processed_annotations/',
+    #output_dir = '/home/psm2208/code/eval/stitched_output'
+    #image_dir = '/home/psm2208/data/GTDB/images/'
 
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
@@ -152,15 +152,16 @@ def stitch_patches(pdf_name,
         for dir in dirs:
             for filename in os.listdir(os.path.join(annotations_dir, pdf_name, dir)):
 
-                patch_num = os.path.splitext(filename)[0]
-                page_num = os.path.basename(os.path.join(annotations_dir, pdf_name, dir))
+                if filename.endswith(".csv"):
+                    patch_num = os.path.splitext(filename)[0]
+                    page_num = os.path.basename(os.path.join(annotations_dir, pdf_name, dir))
 
-                if page_num not in annotations_map[pdf_name]:
-                    annotations_map[pdf_name][page_num] = []
+                    if page_num not in annotations_map[pdf_name]:
+                        annotations_map[pdf_name][page_num] = []
 
-                annotations_map[pdf_name][page_num].append(os.path.join(annotations_dir, pdf_name, dir, filename))
+                    annotations_map[pdf_name][page_num].append(os.path.join(annotations_dir, pdf_name, dir, filename))
 
-    math_file = open(os.path.join(output_dir,pdf_name+'.csv'),'w')
+    math_file = open(os.path.join(output_dir, pdf_name+'.csv'),'w')
 
     writer = csv.writer(math_file, delimiter=",")
 
@@ -175,25 +176,36 @@ def stitch_patches(pdf_name,
                         os.path.join(output_dir, pdf_name, key + '.png'))
 
         for math_region in math_regions:
-            math_region.insert(0,key)
+            math_region.insert(0,int(key)-1)
             writer.writerow(math_region)
-
-        break # TODO
 
     math_file.close()
 
 
-def patch_stitch(filename):
+def patch_stitch(filename, annotations_dir, output_dir, image_dir='/home/psm2208/data/GTDB/images/'):
+
+    training_pdf_names_list = []
     training_pdf_names = open(filename, 'r')
+
     for pdf_name in training_pdf_names:
-        print(pdf_name)
         pdf_name = pdf_name.strip()
+
         if pdf_name != '':
-            stitch_patches(pdf_name.strip())
+            training_pdf_names_list.append((pdf_name, annotations_dir, output_dir, image_dir))
+
     training_pdf_names.close()
+
+    pool = Pool(processes=4)
+    pool.map(stitch_patches, training_pdf_names_list)
+    pool.close()
+    pool.join()
 
 
 if __name__ == '__main__':
-    stitch_patches("TMJ_1990_163_193")
-    #filename = sys.argv[1]
-    #patch_stitch(filename)
+    #stitch_patches("TMJ_1990_163_193")
+    #stitch_patches("AIF_1970_493_498", "/home/psm2208/code/eval")
+    #filename = sys.argv[1] # train_pdf
+
+    #patch_stitch(filename, sys.argv[2], sys.argv[3])
+    patch_stitch("/home/psm2208/data/GTDB/train_pdf", "/home/psm2208/code/eval/Train_Focal_100",
+                 "/home/psm2208/code/eval/Train_Focal_100/out", '/home/psm2208/data/GTDB/images/')
