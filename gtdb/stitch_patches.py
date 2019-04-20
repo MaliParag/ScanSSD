@@ -9,6 +9,8 @@ import numpy as np
 import utils.visualize as visualize
 import sys
 from multiprocessing import Pool
+from cv2.dnn import NMSBoxes
+from scipy.ndimage.measurements import label
 
 # Default parameters for thr GTDB dataset
 intermediate_width = 4800
@@ -22,10 +24,15 @@ stride = 1
 n_horizontal = int(intermediate_width / crop_size)  # 4
 n_vertical = int(intermediate_height / crop_size)  # 5
 
-def add_columns(x, y):
-    return [a + b for a,b in zip(x, y)]
-
 def combine_math_regions(math_files_list, image_path, output_image):
+
+    """
+    It is called for each page in the pdf
+    :param math_files_list:
+    :param image_path:
+    :param output_image:
+    :return:
+    """
 
     image = cv2.imread(image_path)
 
@@ -50,8 +57,6 @@ def combine_math_regions(math_files_list, image_path, output_image):
         # if there is only one entry convert it to correct form required
         if len(data.shape) == 1:
             data = data.reshape(1, -1)
-
-        #data = data.astype(int)
 
         annotations_map[name] = data
 
@@ -87,6 +92,10 @@ def combine_math_regions(math_files_list, image_path, output_image):
         data_arr[:, 2] = data_arr[:, 2] * intermediate_width_ratio
         data_arr[:, 1] = data_arr[:, 1] * intermediate_height_ratio
         data_arr[:, 3] = data_arr[:, 3] * intermediate_height_ratio
+
+        # multiply score by 100. Because later we convert data_arr to int datatype
+        data_arr[:, 4] = data_arr[:, 4] * 100
+
         annotations_map[filename] = data_arr
 
     math_regions = np.array([])
@@ -99,9 +108,101 @@ def combine_math_regions(math_files_list, image_path, output_image):
             math_regions = np.concatenate((math_regions, annotations_map[key]), axis=0)
 
     math_regions = math_regions.astype(int)
+
+    #math_regions = perform_nms(math_regions)
+    #math_regions = overlap_expand(math_regions)
+
     math_regions = math_regions.tolist()
 
+    math_regions = voting_algo(math_regions, image)
+
+    print(len(math_regions))
+
+    visualize.draw_boxes_cv(image, math_regions, output_image)
+
+    return math_regions
+
+
+def voting_algo(math_regions, image, thresh_votes=5):
+    """
+    My voting algorithm
+    :param math_regions:
+    :param image:
+    :return:
+    """
+
+    original_width = image.shape[1]
+    original_height = image.shape[0]
+
+    votes = np.zeros(shape=(original_height, original_width))
+
+    # cast votes for the regions
+    for box in math_regions:
+        votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
+            votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + 1
+
+    # find the regions with higher than the threshold votes
+    boxes = []
+
+    # change all the values less than thresh_votes to 0
+    votes[votes < thresh_votes] = 0
+    votes[votes >= thresh_votes] = 1
+
+    # find the rectangular regions
+
+    # this defines the connection filter
+    # we allow any kind of connection
+    structure = np.ones((3, 3), dtype=np.int)
+
+    labeled, ncomponents = label(votes, structure)
+
+    # found the boxes. Now extract the co-ordinates left,top,right,bottom
+
+    boxes = []
+    indices = np.indices(votes.shape).T[:, :, [1, 0]]
+
+    for i in range(ncomponents):
+
+        labels = (labeled == (i+1))
+        pixels = indices[labels.T]
+
+        box = [min(pixels[:, 0]), min(pixels[:, 1]), max(pixels[:, 0]), max(pixels[:, 1])]
+        boxes.append(box)
+
+    return boxes
+
+
+def perform_nms(math_regions):
+
+    # convert from x1,y1,x2,y2 to x,y,w,h
+    math_regions[:, 2] = math_regions[:, 2] - math_regions[:, 0]
+    math_regions[:, 3] = math_regions[:, 3] - math_regions[:, 1]
+
+    scores = math_regions[:, 4]
+    math_regions = np.delete(math_regions, 4, 1)
+
+    math_regions = math_regions.tolist()
+    scores = scores.tolist()
+
+    indices = NMSBoxes(math_regions, scores, 0.2, 0.01)
+
+    indices = [item for sublist in indices for item in sublist]
+    math_regions = [math_regions[i] for i in indices]
+
+    math_regions = np.array(math_regions)
+
+    # restore to x1,y1,x2,y2
+    math_regions[:, 2] = math_regions[:, 2] + math_regions[:, 0]
+    math_regions[:, 3] = math_regions[:, 3] + math_regions[:, 1]
+
+    return math_regions.tolist()
+
+def overlap_expand(math_regions):
+
     print('Number of math regions ', len(math_regions))
+
+    if type(math_regions) != type([]):
+        math_regions = math_regions.tolist()
 
     obsolete = []
 
@@ -117,7 +218,6 @@ def combine_math_regions(math_files_list, image_path, output_image):
 
     math_regions = [i for j, i in enumerate(math_regions) if j not in obsolete]
 
-    visualize.draw_boxes_cv(image, math_regions, output_image)
     return math_regions
 
 # check if two rectangles intersect
@@ -136,9 +236,6 @@ def stitch_patches(args):
     #annotations_dir = '/home/psm2208/data/GTDB/processed_annotations/',
     #output_dir = '/home/psm2208/code/eval/stitched_output'
     #image_dir = '/home/psm2208/data/GTDB/images/'
-
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
 
     # annotation map per pdf
     # map: {'name': {'1': []}}
@@ -170,6 +267,7 @@ def stitch_patches(args):
 
     for key in sorted(annotations_map[pdf_name]):
 
+        # basically it is called for each page in the pdf
         math_regions = combine_math_regions(
                         annotations_map[pdf_name][key],
                         os.path.join(image_dir, pdf_name, key + '.png'),
@@ -183,6 +281,9 @@ def stitch_patches(args):
 
 
 def patch_stitch(filename, annotations_dir, output_dir, image_dir='/home/psm2208/data/GTDB/images/'):
+
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
 
     training_pdf_names_list = []
     training_pdf_names = open(filename, 'r')
@@ -206,6 +307,10 @@ if __name__ == '__main__':
     #stitch_patches("AIF_1970_493_498", "/home/psm2208/code/eval")
     #filename = sys.argv[1] # train_pdf
 
+    #stitch_patches(("Arkiv_1997_185_199", "/home/psm2208/code/eval/Train_Focal_100",
+    #             "/home/psm2208/code/eval/Train_Focal_100/out", '/home/psm2208/data/GTDB/images/'))
+
     #patch_stitch(filename, sys.argv[2], sys.argv[3])
-    patch_stitch("/home/psm2208/data/GTDB/train_pdf", "/home/psm2208/code/eval/Train_Focal_100",
-                 "/home/psm2208/code/eval/Train_Focal_100/out", '/home/psm2208/data/GTDB/images/')
+    stride = 0.1
+    patch_stitch("/home/psm2208/data/GTDB/train_pdf", "/home/psm2208/code/eval/Train_Focal_10_25",
+                 "/home/psm2208/code/eval/Train_Focal_10_25/none", '/home/psm2208/data/GTDB/images/')
