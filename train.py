@@ -54,6 +54,12 @@ parser.add_argument('--save_folder', default='weights/',
                     help='Directory for saving checkpoint models')
 parser.add_argument('--layers_to_freeze', default=20, type=float,
                     help='Number of VGG16 layers to freeze')
+parser.add_argument('--model_type', default=300, type=int,
+                    help='Type of ssd model, ssd300 or ssd512')
+parser.add_argument('--suffix', default="_10", type=str,
+                    help='Stride % used while generating images')
+parser.add_argument('--type', default="processed_train", type=str,
+                    help='Type of image set to use. This is list of file names, one per line')
 
 args = parser.parse_args()
 
@@ -74,7 +80,7 @@ if not os.path.exists(args.save_folder):
 
 def train():
     cfg = gtdb
-    dataset = GTDBDetection(root=args.dataset_root,
+    dataset = GTDBDetection(args,
                             transform=SSDAugmentation(cfg['min_dim'],
                                                       MEANS))
 
@@ -111,7 +117,7 @@ def train():
         print('Resuming training, loading {}...'.format(args.resume))
         ssd_net.load_weights(args.resume)
     else:
-        vgg_weights = torch.load(args.save_folder + args.basenet)
+        vgg_weights = torch.load("base_weights/" + args.basenet)
         print('Loading base network...')
         ssd_net.vgg.load_state_dict(vgg_weights)
 
@@ -145,7 +151,7 @@ def train():
     step_index = 0
 
     if args.visdom:
-        vis_title = 'SSD.PyTorch on ' + dataset.name
+        vis_title = 'SSD ' + str(args.model_type) + ' on ' + dataset.name
         vis_legend = ['Loc Loss', 'Conf Loss', 'Total Loss']
         iter_plot = create_vis_plot('Iteration', 'Loss', viz, vis_title, vis_legend)
         epoch_plot = create_vis_plot('Epoch', 'Loss', viz, vis_title, vis_legend)
@@ -211,8 +217,11 @@ def train():
 
         if iteration != 0 and iteration % 50 == 0:
             print('Saving state, iter:', iteration)
-            torch.save(ssd_net.state_dict(), 'weights/ssd300_GTDB_' +
-                       repr(iteration) + '.pth')
+            torch.save(ssd_net.state_dict(),
+                       os.path.join(
+                        args.save_folder, 'ssd' + str(args.model_type) + args.dataset +
+                        repr(iteration) + '.pth'))
+
     torch.save(ssd_net.state_dict(),
                args.save_folder + '' + args.dataset + '.pth')
 

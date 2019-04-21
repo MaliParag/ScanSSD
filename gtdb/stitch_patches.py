@@ -119,9 +119,9 @@ def combine_math_regions(math_files_list, image_path, output_image):
     #math_regions = voting_algo(math_regions, image, algorithm='sum_score', thresh_votes=10)
     #math_regions = voting_algo(math_regions, image, algorithm='avg_score', thresh_votes=0.3)
 
-    #print(len(math_regions))
+    print(len(math_regions))
 
-    #visualize.draw_boxes_cv(image, math_regions, output_image)
+    visualize.draw_boxes_cv(image, math_regions, output_image)
 
     # Works only with 'none' stitching method
     # Can't use any stitching method with this function

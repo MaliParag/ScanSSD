@@ -156,27 +156,39 @@ def vgg(cfg, i, batch_norm=False):
     return layers
 
 
-def add_extras(cfg, i, batch_norm=False):
+def add_extras(cfg, size, i, batch_norm=False):
     # Extra layers added to VGG for feature scaling
     layers = []
     in_channels = i
     flag = False
-    for k, v in enumerate(cfg):
+
+    extras = cfg['extras'][str(size)]
+
+    for k, v in enumerate(extras):
         if in_channels != 'S':
             if v == 'S':
-                layers += [nn.Conv2d(in_channels, cfg[k + 1],
+                layers += [nn.Conv2d(in_channels, extras[k + 1],
                            kernel_size=(1, 3)[flag], stride=2, padding=1)]
             else:
                 layers += [nn.Conv2d(in_channels, v, kernel_size=(1, 3)[flag])]
             flag = not flag
         in_channels = v
+
+    if size == 512:
+        layers.append(nn.Conv2d(in_channels, 128, kernel_size=1, stride=1))
+        layers.append(nn.Conv2d(128, 256, kernel_size=4, stride=1, padding=1))
+
     return layers
 
 
-def multibox(vgg, extra_layers, cfg, num_classes):
+def multibox(vgg, extra_layers, cfg, size, num_classes):
     loc_layers = []
     conf_layers = []
-    vgg_source = [21, -2]
+
+    if size == 300:
+        vgg_source = [21, -2]
+    else:
+        vgg_source = [24, -2]
 
     for k, v in enumerate(vgg_source):
         loc_layers += [nn.Conv2d(vgg[v].out_channels,
@@ -223,7 +235,7 @@ def build_ssd(phase, cfg, gpu_id, size=300, num_classes=21):
     #           "currently only SSD300 (size=300) is supported!")
     #     return
     #
-    base_, extras_, head_ = multibox(vgg(base[str(size)], 3),
-                                     add_extras(cfg['extras'][str(size)], 1024),
-                                     cfg['mbox'][str(size)], num_classes)
+    base_, extras_, head_ = multibox(vgg(base[str(size)], 3, False),
+                                     add_extras(cfg, size, 1024),
+                                     cfg['mbox'][str(size)], size, num_classes)
     return SSD(phase, cfg, size, base_, extras_, head_, num_classes, gpu_id)
