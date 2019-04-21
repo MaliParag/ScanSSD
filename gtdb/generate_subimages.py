@@ -8,6 +8,7 @@ import cv2
 import copy
 import os
 import sys
+from multiprocessing import Pool
 
 # Default parameters for thr GTDB dataset
 intermediate_width = 4800
@@ -15,6 +16,7 @@ intermediate_height = 6000
 crop_size = 1200
 final_width = 300
 final_height = 300
+stride = 0.5
 
 n_horizontal = int(intermediate_width / crop_size)  # 4
 n_vertical = int(intermediate_height / crop_size)  # 5
@@ -23,21 +25,8 @@ n_vertical = int(intermediate_height / crop_size)  # 5
 def generate_subimages(pdf_name ='Alford94',
                        math_dir='/home/psm2208/data/GTDB/annotations/',
                        image_dir='/home/psm2208/data/GTDB/images/',
-                       output_image_dir='/home/psm2208/data/GTDB/processed_images/',
-                       output_math_dir='/home/psm2208/data/GTDB/processed_annotations/'):
-
-    # create required dirs
-    if not os.path.exists(output_image_dir):
-        os.makedirs(output_image_dir)
-
-    if not os.path.exists(output_math_dir):
-        os.makedirs(output_math_dir)
-
-    if not os.path.exists(os.path.join(output_image_dir, pdf_name)):
-        os.makedirs(os.path.join(output_image_dir, pdf_name))
-
-    if not os.path.exists(os.path.join(output_math_dir, pdf_name)):
-        os.makedirs(os.path.join(output_math_dir, pdf_name))
+                       output_image_dir='/home/psm2208/data/GTDB/processed_images_50/',
+                       output_math_dir='/home/psm2208/data/GTDB/processed_annotations_50/'):
 
     # find all the images
     image_filelist = [file for file in os.listdir(os.path.join(image_dir, pdf_name)) if file.endswith('.png')]
@@ -48,7 +37,6 @@ def generate_subimages(pdf_name ='Alford94',
 
     if math_file_present:
         math_file = open(math_filepath, 'r')
-
 
     if math_file_present:
         boxes = {}
@@ -67,6 +55,7 @@ def generate_subimages(pdf_name ='Alford94',
 
     for image_filepath in image_filelist:
 
+        #os.path.basename
         image = cv2.imread(os.path.join(image_dir, pdf_name, image_filepath))
         basename = os.path.basename(image_filepath)
         page_id = int(os.path.splitext(basename)[0])
@@ -102,8 +91,8 @@ def generate_subimages(pdf_name ='Alford94',
         if not os.path.exists(os.path.join(output_math_dir, pdf_name, str(page_id))):
             os.makedirs(os.path.join(output_math_dir, pdf_name, str(page_id)))
 
-        for i in np.arange(0, n_vertical-1+0.1, 0.1):
-            for j in np.arange(0, n_horizontal-1+0.1, 0.1):
+        for i in np.arange(0, n_vertical-1+stride, stride):
+            for j in np.arange(0, n_horizontal-1+stride, stride):
 
                 print('Processing sub image : ', subimg_id)
 
@@ -166,7 +155,6 @@ def generate_subimages(pdf_name ='Alford94',
 
                             count = count + 1
                             out_math.write(str(box[0]) + "," + str(box[1]) + "," + str(box[2]) + "," + str(box[3]) + "\n")
-                            #cv2.rectangle(cropped_image, (box[0], box[1]), (box[2], box[3]), (255, 0, 0), 3)
 
                 fig_name = os.path.join(output_image_dir, pdf_name, str(page_id), str(subimg_id) + ".png")
                 print("Saving " + fig_name)
@@ -190,11 +178,38 @@ def intersects(first, other):
 if __name__ == '__main__':
 
     training_pdf_names = open(sys.argv[1], 'r')
+    stride = float(sys.argv[2]) # 0.1
+
+    training_pdf_names_list = []
 
     # for each training image pdf file
     for pdf_name in training_pdf_names:
         pdf_name = pdf_name.strip()
         if pdf_name != '':
-            generate_subimages(pdf_name.strip())
+            training_pdf_names_list.append(pdf_name)
 
     training_pdf_names.close()
+
+    math_dir = '/home/psm2208/data/GTDB/annotations/'
+    image_dir = '/home/psm2208/data/GTDB/images/'
+    output_image_dir = '/home/psm2208/data/GTDB/processed_images_50/'
+    output_math_dir = '/home/psm2208/data/GTDB/processed_annotations_50/'
+
+    # create required dirs
+    if not os.path.exists(output_image_dir):
+        os.makedirs(output_image_dir)
+
+    if not os.path.exists(output_math_dir):
+        os.makedirs(output_math_dir)
+
+    if not os.path.exists(os.path.join(output_image_dir, pdf_name)):
+        os.makedirs(os.path.join(output_image_dir, pdf_name))
+
+    if not os.path.exists(os.path.join(output_math_dir, pdf_name)):
+        os.makedirs(os.path.join(output_math_dir, pdf_name))
+
+    pool = Pool(processes=4)
+    pool.map(generate_subimages, training_pdf_names_list)
+    pool.close()
+    pool.join()
+

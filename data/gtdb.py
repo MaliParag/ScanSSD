@@ -61,26 +61,25 @@ class GTDBDetection(data.Dataset):
         dataset_name: `GTDB`
     """
 
-    def __init__(self, root,
-                 image_set='processed_train',
+    def __init__(self, args,
                  transform=None, target_transform=GTDBAnnotationTransform(),
                  dataset_name='GTDB'):
 
-        self.root = root
-        self.image_set = image_set
+        self.root = args.dataset_root
+        self.image_set = args.type
         self.transform = transform
         self.target_transform = target_transform
         self.name = dataset_name
         #self._annopath = osp.join('%s', 'annotations', '%s.pmath')
         #self._imgpath = osp.join('%s', 'images', '%s.png')
 
-        self._annopath = osp.join('%s', 'processed_annotations', '%s.pmath')
-        self._imgpath = osp.join('%s', 'processed_images', '%s.png')
+        self._annopath = osp.join('%s', 'processed_annotations' + args.suffix, '%s.pmath')
+        self._imgpath = osp.join('%s', 'processed_images' + args.suffix, '%s.png')
 
         self.ids = list()
 
-        for line in open(osp.join(root, image_set)):
-            self.ids.append((root, line.strip()))
+        for line in open(osp.join(self.root, self.image_set)):
+            self.ids.append((self.root, line.strip()))
 
     def __getitem__(self, index):
         im, gt, h, w = self.pull_item(index)

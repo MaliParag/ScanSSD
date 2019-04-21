@@ -2,12 +2,13 @@
 # This script stitches back the output generated on the image patches (sub-images)
 
 # read the image
+import sys
+sys.path.extend(['/home/psm2208/code', '/home/psm2208/code'])
 import cv2
 import os
 import csv
 import numpy as np
 import utils.visualize as visualize
-import sys
 from multiprocessing import Pool
 from cv2.dnn import NMSBoxes
 from scipy.ndimage.measurements import label
@@ -112,18 +113,24 @@ def combine_math_regions(math_files_list, image_path, output_image):
     #math_regions = perform_nms(math_regions)
     #math_regions = overlap_expand(math_regions)
 
-    math_regions = math_regions.tolist()
+    #math_regions = math_regions.tolist()
 
-    math_regions = voting_algo(math_regions, image)
+    #math_regions = voting_algo(math_regions, image, algorithm='equal', thresh_votes=10)
+    #math_regions = voting_algo(math_regions, image, algorithm='sum_score', thresh_votes=10)
+    #math_regions = voting_algo(math_regions, image, algorithm='avg_score', thresh_votes=0.3)
 
-    print(len(math_regions))
+    #print(len(math_regions))
 
-    visualize.draw_boxes_cv(image, math_regions, output_image)
+    #visualize.draw_boxes_cv(image, math_regions, output_image)
 
-    return math_regions
+    # Works only with 'none' stitching method
+    # Can't use any stitching method with this function
+    #visualize.draw_stitched_boxes(image, math_regions, output_image)
+
+    return math_regions.tolist()
 
 
-def voting_algo(math_regions, image, thresh_votes=5):
+def voting_algo(math_regions, image, algorithm='equal', thresh_votes=20):
     """
     My voting algorithm
     :param math_regions:
@@ -136,10 +143,41 @@ def voting_algo(math_regions, image, thresh_votes=5):
 
     votes = np.zeros(shape=(original_height, original_width))
 
-    # cast votes for the regions
-    for box in math_regions:
-        votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
-            votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + 1
+    if algorithm == 'sum_score':
+        thresh_votes = thresh_votes * 100
+
+        # cast votes for the regions
+        for box in math_regions:
+            votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
+                votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + box[4]
+
+    elif algorithm == 'avg_score':
+        thresh_votes = thresh_votes * 100
+
+        counts = np.zeros(shape=(original_height, original_width))
+
+        # cast votes for the regions
+        for box in math_regions:
+            votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
+                votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + box[4]
+
+        # count the regions
+        for box in math_regions:
+            counts[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
+                counts[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + 1
+
+        # To avoid divide by zero
+        # When counts is zero, votes will be zero
+        # So this should not affect the calculations and results
+        counts[counts==0] = 1
+
+        votes = votes / counts
+
+    else: # algorithm='equal'
+        # cast votes for the regions
+        for box in math_regions:
+            votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
+                votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + 1
 
     # find the regions with higher than the threshold votes
     boxes = []
@@ -249,7 +287,7 @@ def stitch_patches(args):
         for dir in dirs:
             for filename in os.listdir(os.path.join(annotations_dir, pdf_name, dir)):
 
-                if filename.endswith(".csv"):
+                if filename.endswith(".csv") or filename.endswith(".pmath"):
                     patch_num = os.path.splitext(filename)[0]
                     page_num = os.path.basename(os.path.join(annotations_dir, pdf_name, dir))
 
@@ -259,11 +297,11 @@ def stitch_patches(args):
                     annotations_map[pdf_name][page_num].append(os.path.join(annotations_dir, pdf_name, dir, filename))
 
     math_file = open(os.path.join(output_dir, pdf_name+'.csv'),'w')
-
     writer = csv.writer(math_file, delimiter=",")
 
     if not os.path.exists(os.path.join(output_dir, pdf_name)):
         os.mkdir(os.path.join(output_dir, pdf_name))
+
 
     for key in sorted(annotations_map[pdf_name]):
 
@@ -312,5 +350,8 @@ if __name__ == '__main__':
 
     #patch_stitch(filename, sys.argv[2], sys.argv[3])
     stride = 0.1
+    # stitch_patches(("TMJ_1990_163_193", "/home/psm2208/code/eval/Train_Focal_10_25",
+    #            "/home/psm2208/code/eval/Train_Focal_10_25/voting_16", '/home/psm2208/data/GTDB/images/'))
+
     patch_stitch("/home/psm2208/data/GTDB/train_pdf", "/home/psm2208/code/eval/Train_Focal_10_25",
-                 "/home/psm2208/code/eval/Train_Focal_10_25/none", '/home/psm2208/data/GTDB/images/')
+               "/home/psm2208/code/eval/Train_Focal_10_25/none_heatmap", '/home/psm2208/data/GTDB/images/')

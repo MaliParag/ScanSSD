@@ -1,19 +1,11 @@
 from __future__ import print_function
-import sys
 import os
 import argparse
-import torch
-import torch.nn as nn
 import torch.backends.cudnn as cudnn
-import torchvision.transforms as transforms
-from torch.autograd import Variable
-from data import VOC_ROOT, VOC_CLASSES as labelmap
-#from data import GTDB_ROOT, GTDB_CLASSES as labelmap
-from PIL import Image
+from data import VOC_CLASSES as labelmap
 from data import *
-import torch.utils.data as data
 from ssd import build_ssd
-from utils import draw_boxes, helpers
+from utils import draw_boxes, helpers, save_boxes
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')
 parser.add_argument('--trained_model', default='weights/ssd300_GTDB_990.pth',
@@ -25,7 +17,13 @@ parser.add_argument('--visual_threshold', default=0.6, type=float,
 parser.add_argument('--cuda', default=False, type=bool,
                     help='Use cuda to train model')
 parser.add_argument('--dataset_root', default=VOC_ROOT, help='Location of VOC root directory')
+parser.add_argument('--type', default="test", help='Evaluate on test or train')
+parser.add_argument('--verbose', default=False, type=bool, help='plot output')
+parser.add_argument('--suffix', default="", type=str, help='suffix of directory of images for testing')
+parser.add_argument('--exp_name', default="SSD", help='Name of the experiment. Will be used to generate output')
+
 parser.add_argument('-f', default=None, type=str, help="Dummy arg so we can load in Jupyter Notebooks")
+
 args = parser.parse_args()
 
 if args.cuda and torch.cuda.is_available():
@@ -37,18 +35,16 @@ if not os.path.exists(args.save_folder):
     os.mkdir(args.save_folder)
 
 
-def test_net(save_folder, net, cuda, gpu_id, testset, transform, thresh):
+def test_net(args, net, gpu_id, testset, transform, thresh):
     # dump predictions and assoc. ground truth to text file for now
-    filename = save_folder + 'detection_output.txt'
+    filename = args.save_folder + 'detection_output.txt'
     if os.path.isfile(filename):
         os.remove(filename)
 
-    #num_images = len(testset)
-
+    num_images = len(testset)
     f = open(filename, "w")
 
-    ## TODO remove this line
-    num_images = 200
+    #num_images = 200
     for i in range(num_images):
         print('Testing image {:d}/{:d}....'.format(i+1, num_images))
         img = testset.pull_image(i)
@@ -59,7 +55,7 @@ def test_net(save_folder, net, cuda, gpu_id, testset, transform, thresh):
         f.write('\nFOR: '+img_id+'\n')
         for box in annotation:
             f.write('label: '+' || '.join(str(b) for b in box)+'\n')
-        if cuda:
+        if args.cuda:
             x = x.to(gpu_id)
 
         y, debug_boxes, debug_scores = net(x)      # forward pass
@@ -70,6 +66,8 @@ def test_net(save_folder, net, cuda, gpu_id, testset, transform, thresh):
         pred_num = 0
 
         recognized_boxes = []
+        recognized_scores = []
+
         #[1,2,200,5] -> 1 is number of classes, 200 is top_k, 5 is bounding box with class label,
         for i in range(detections.size(1)):
             j = 0
@@ -80,14 +78,18 @@ def test_net(save_folder, net, cuda, gpu_id, testset, transform, thresh):
                 label_name = labelmap[i-1]
                 pt = (detections[0, i, j, 1:]*scale).cpu().numpy()
                 coords = (pt[0], pt[1], pt[2], pt[3])
+
                 recognized_boxes.append(coords)
-                #confs.append(score)
+                recognized_scores.append(score.cpu().numpy())
+
                 pred_num += 1
                 f.write(str(pred_num)+' label: '+label_name+' score: ' +
                         str(score) + ' '+' || '.join(str(c) for c in coords) + '\n')
                 j += 1
 
-        draw_boxes(img, recognized_boxes, debug_boxes, debug_scores, scale, os.path.join("eval", img_id + ".png"))
+        save_boxes(args, recognized_boxes, recognized_scores, img_id)
+        if args.verbose:
+            draw_boxes(args, img, recognized_boxes, debug_boxes, debug_scores, scale, img_id)
 
     f.close()
 
@@ -120,19 +122,21 @@ def test_gtdb():
     num_classes = 2 # +1 background
     net = build_ssd('test', gtdb, gpu_id, 300, num_classes) # initialize SSD
     net.to(gpu_id)
+
+    # TODO: should remove map_location argument
     net.load_state_dict(torch.load(args.trained_model, map_location={'cuda:0':'cuda:1'}))
     net.eval()
     print('Finished loading model!')
-    # load data
-    testset = GTDBDetection(args.dataset_root, 'processed_test', None, GTDBAnnotationTransform())
+
     #testset = GTDBDetection(args.dataset_root, 'processed_train', None, GTDBAnnotationTransform())
+    testset = GTDBDetection(args, None, GTDBAnnotationTransform())
 
     if args.cuda:
         net = net.to(gpu_id)
         cudnn.benchmark = True
 
     # evaluation
-    test_net(args.save_folder, net, args.cuda, gpu_id, testset,
+    test_net(args, net, gpu_id, testset,
              BaseTransform(net.size, (104, 117, 123)),
              thresh=args.visual_threshold)
 
