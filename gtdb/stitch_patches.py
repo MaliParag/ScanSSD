@@ -12,6 +12,7 @@ import utils.visualize as visualize
 from multiprocessing import Pool
 from cv2.dnn import NMSBoxes
 from scipy.ndimage.measurements import label
+import scipy.ndimage as ndimage
 
 # Default parameters for thr GTDB dataset
 intermediate_width = 4800
@@ -35,6 +36,7 @@ def combine_math_regions(math_files_list, image_path, output_image):
     :return:
     """
 
+    print(image_path)
     image = cv2.imread(image_path)
 
     original_width = image.shape[1]
@@ -115,8 +117,8 @@ def combine_math_regions(math_files_list, image_path, output_image):
 
     #math_regions = math_regions.tolist()
 
-    #math_regions = voting_algo(math_regions, image, algorithm='equal', thresh_votes=10)
-    #math_regions = voting_algo(math_regions, image, algorithm='sum_score', thresh_votes=10)
+    math_regions = voting_algo(math_regions, image, algorithm='equal', thresh_votes=20)
+    #math_regions = voting_algo(math_regions, image, algorithm='sum_score', thresh_votes=20)
     #math_regions = voting_algo(math_regions, image, algorithm='avg_score', thresh_votes=0.3)
 
     print(len(math_regions))
@@ -127,7 +129,7 @@ def combine_math_regions(math_files_list, image_path, output_image):
     # Can't use any stitching method with this function
     #visualize.draw_stitched_boxes(image, math_regions, output_image)
 
-    return math_regions.tolist()
+    return math_regions
 
 
 def voting_algo(math_regions, image, algorithm='equal', thresh_votes=20):
@@ -180,18 +182,30 @@ def voting_algo(math_regions, image, algorithm='equal', thresh_votes=20):
                 votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + 1
 
     # find the regions with higher than the threshold votes
-    boxes = []
 
     # change all the values less than thresh_votes to 0
     votes[votes < thresh_votes] = 0
     votes[votes >= thresh_votes] = 1
 
-    # find the rectangular regions
+
+    # TODO : Row info might be useful
+    # use image to find the rows where all values are zero
+    # use that info separate lines
+    # so, that math regions on different lines do not get merged
+    # This allows for horizontal merging, but skips vertical merging
+    #
+    #blank_rows = find_blank_rows(image)
+    
+    # for blank rows, zero votes
+    #for box in blank_rows:
+    #    votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = 0
 
     # this defines the connection filter
     # we allow any kind of connection
     structure = np.ones((3, 3), dtype=np.int)
 
+    # find the rectangular regions
+    # votes = ndimage.binary_opening(votes, structure=structure)
     labeled, ncomponents = label(votes, structure)
 
     # found the boxes. Now extract the co-ordinates left,top,right,bottom
@@ -208,6 +222,51 @@ def voting_algo(math_regions, image, algorithm='equal', thresh_votes=20):
         boxes.append(box)
 
     return boxes
+
+
+def find_blank_rows(image, line_spacing=15):
+
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blank_rows = np.all(gray_image == 255, axis=1)
+
+    im_bw = np.zeros(gray_image.shape)
+    im_bw[blank_rows] = 255
+    #gray_image[~blank_rows] = 0
+
+    cv2.imwrite("/home/psm2208/code/eval/test.png", im_bw)
+
+    labeled, ncomponents = ndimage.label(im_bw)
+    rows = []
+
+    indices = np.indices(im_bw.shape).T[:, :, [1, 0]]
+
+    # for i in range(ncomponents):
+    #
+    #     labels = (labeled == (i+1))
+    #     pixels = indices[labels.T]
+    #
+    #     box = [min(pixels[:, 0]), min(pixels[:, 1]), max(pixels[:, 0]), max(pixels[:, 1])]
+    #
+    #     if box[2] - box[0] > line_spacing:
+    #         rows.append(box)
+
+    line_bbs = ndimage.find_objects(labeled)
+    sizes = np.array([[bb.stop - bb.start for bb in line_bb]
+                      for line_bb in line_bbs])
+
+    sizes = sizes[:,0]
+    mask = (sizes > line_spacing)
+
+    idx = np.flatnonzero(mask)
+
+    for i in idx:
+        labels = (labeled == (i+1))
+        pixels = indices[labels.T]
+        box = [min(pixels[:, 0]), min(pixels[:, 1]), max(pixels[:, 0]), max(pixels[:, 1])]
+        rows.append(box)
+
+    return rows
+
 
 
 def perform_nms(math_regions):
@@ -334,7 +393,7 @@ def patch_stitch(filename, annotations_dir, output_dir, image_dir='/home/psm2208
 
     training_pdf_names.close()
 
-    pool = Pool(processes=4)
+    pool = Pool(processes=1)
     pool.map(stitch_patches, training_pdf_names_list)
     pool.close()
     pool.join()
@@ -350,8 +409,9 @@ if __name__ == '__main__':
 
     #patch_stitch(filename, sys.argv[2], sys.argv[3])
     stride = 0.1
-    # stitch_patches(("TMJ_1990_163_193", "/home/psm2208/code/eval/Train_Focal_10_25",
-    #            "/home/psm2208/code/eval/Train_Focal_10_25/voting_16", '/home/psm2208/data/GTDB/images/'))
+    stitch_patches(("InvM_1999_163_181", "/home/psm2208/code/eval/Train_Focal_10_25",
+                    "/home/psm2208/code/eval/Train_Focal_10_25/voting_equal_rows",
+                    '/home/psm2208/data/GTDB/images/'))
 
-    patch_stitch("/home/psm2208/data/GTDB/train_pdf", "/home/psm2208/code/eval/Train_Focal_10_25",
-               "/home/psm2208/code/eval/Train_Focal_10_25/none_heatmap", '/home/psm2208/data/GTDB/images/')
+    #patch_stitch("/home/psm2208/data/GTDB/train_pdf", "/home/psm2208/code/eval/Train_Focal_10_25",
+    #            "/home/psm2208/code/eval/Train_Focal_10_25/voting_equal_rows", '/home/psm2208/data/GTDB/images/')

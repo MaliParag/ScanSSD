@@ -185,10 +185,9 @@ def multibox(vgg, extra_layers, cfg, size, num_classes):
     loc_layers = []
     conf_layers = []
 
-    if size == 300:
-        vgg_source = [21, -2]
-    else:
-        vgg_source = [24, -2]
+    vgg_source = [21, -2]
+    #else:
+    #vgg_source = [24, -2]
 
     for k, v in enumerate(vgg_source):
         loc_layers += [nn.Conv2d(vgg[v].out_channels,

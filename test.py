@@ -19,8 +19,10 @@ parser.add_argument('--cuda', default=False, type=bool,
 parser.add_argument('--dataset_root', default=VOC_ROOT, help='Location of VOC root directory')
 parser.add_argument('--type', default="test", help='Evaluate on test or train')
 parser.add_argument('--verbose', default=False, type=bool, help='plot output')
-parser.add_argument('--suffix', default="", type=str, help='suffix of directory of images for testing')
+parser.add_argument('--suffix', default="_10", type=str, help='suffix of directory of images for testing')
 parser.add_argument('--exp_name', default="SSD", help='Name of the experiment. Will be used to generate output')
+parser.add_argument('--model_type', default=300, type=int,
+                    help='Type of ssd model, ssd300 or ssd512')
 
 parser.add_argument('-f', default=None, type=str, help="Dummy arg so we can load in Jupyter Notebooks")
 
@@ -44,7 +46,7 @@ def test_net(args, net, gpu_id, testset, transform, thresh):
     num_images = len(testset)
     f = open(filename, "w")
 
-    #num_images = 200
+    num_images = 200
     for i in range(num_images):
         print('Testing image {:d}/{:d}....'.format(i+1, num_images))
         img = testset.pull_image(i)
@@ -96,7 +98,7 @@ def test_net(args, net, gpu_id, testset, transform, thresh):
 def test_voc():
     # load net
     num_classes = len(VOC_CLASSES) + 1 # +1 background
-    net = build_ssd('test', 300, num_classes) # initialize SSD
+    net = build_ssd('test', args.model_type, num_classes) # initialize SSD
     net.load_state_dict(torch.load(args.trained_model))
     net.eval()
     print('Finished loading model!')
@@ -120,7 +122,7 @@ def test_gtdb():
 
     # load net
     num_classes = 2 # +1 background
-    net = build_ssd('test', gtdb, gpu_id, 300, num_classes) # initialize SSD
+    net = build_ssd('test', gtdb, gpu_id, args.model_type, num_classes) # initialize SSD
     net.to(gpu_id)
 
     # TODO: should remove map_location argument
