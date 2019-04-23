@@ -131,6 +131,71 @@ def combine_math_regions(math_files_list, image_path, output_image):
 
     return math_regions
 
+def voting_equal(votes, math_regions):
+    # cast votes for the regions
+    for box in math_regions:
+        votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
+            votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + 1
+
+    return votes
+
+def voting_avg_score(votes, math_regions, original_height, original_width):
+
+
+    counts = np.zeros(shape=(original_height, original_width))
+
+    # cast votes for the regions
+    for box in math_regions:
+        votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
+            votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + box[4]
+
+    # count the regions
+    for box in math_regions:
+        counts[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
+            counts[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + 1
+
+    # To avoid divide by zero
+    # When counts is zero, votes will be zero
+    # So this should not affect the calculations and results
+    counts[counts == 0] = 1
+
+    votes = votes / counts
+
+    return votes
+
+def voting_sum_score(votes, math_regions):
+
+    # cast votes for the regions
+    for box in math_regions:
+        votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
+            votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + box[4]
+
+    return votes
+
+def vote_for_regions(math_regions, image, algorithm, thresh_votes):
+
+    original_width = image.shape[1]
+    original_height = image.shape[0]
+
+    votes = np.zeros(shape=(original_height, original_width))
+
+    if algorithm == 'sum_score':
+        thresh_votes = thresh_votes * 100
+        votes = voting_sum_score(votes, math_regions)
+
+    elif algorithm == 'avg_score':
+        thresh_votes = thresh_votes * 100
+        votes = voting_equal(votes, math_regions, original_height, original_width)
+
+    else:  # algorithm='equal'
+        votes = voting_equal(votes, math_regions)
+
+    # find the regions with higher than the threshold votes
+    # change all the values less than thresh_votes to 0
+    votes[votes < thresh_votes] = 0
+    votes[votes >= thresh_votes] = 1
+
+    return votes
 
 def voting_algo(math_regions, image, algorithm='equal', thresh_votes=20):
     """
@@ -140,52 +205,8 @@ def voting_algo(math_regions, image, algorithm='equal', thresh_votes=20):
     :return:
     """
 
-    original_width = image.shape[1]
-    original_height = image.shape[0]
-
-    votes = np.zeros(shape=(original_height, original_width))
-
-    if algorithm == 'sum_score':
-        thresh_votes = thresh_votes * 100
-
-        # cast votes for the regions
-        for box in math_regions:
-            votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
-                votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + box[4]
-
-    elif algorithm == 'avg_score':
-        thresh_votes = thresh_votes * 100
-
-        counts = np.zeros(shape=(original_height, original_width))
-
-        # cast votes for the regions
-        for box in math_regions:
-            votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
-                votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + box[4]
-
-        # count the regions
-        for box in math_regions:
-            counts[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
-                counts[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + 1
-
-        # To avoid divide by zero
-        # When counts is zero, votes will be zero
-        # So this should not affect the calculations and results
-        counts[counts==0] = 1
-
-        votes = votes / counts
-
-    else: # algorithm='equal'
-        # cast votes for the regions
-        for box in math_regions:
-            votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
-                votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + 1
-
-    # find the regions with higher than the threshold votes
-
-    # change all the values less than thresh_votes to 0
-    votes[votes < thresh_votes] = 0
-    votes[votes >= thresh_votes] = 1
+    # vote for the regions
+    votes = vote_for_regions(math_regions, image, algorithm, thresh_votes)
 
 
     # TODO : Row info might be useful
@@ -194,10 +215,10 @@ def voting_algo(math_regions, image, algorithm='equal', thresh_votes=20):
     # so, that math regions on different lines do not get merged
     # This allows for horizontal merging, but skips vertical merging
     #
-    #blank_rows = find_blank_rows(image)
-    
+    # blank_rows = find_blank_rows(image)
+
     # for blank rows, zero votes
-    #for box in blank_rows:
+    # for box in blank_rows:
     #    votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = 0
 
     # this defines the connection filter
@@ -209,7 +230,6 @@ def voting_algo(math_regions, image, algorithm='equal', thresh_votes=20):
     labeled, ncomponents = label(votes, structure)
 
     # found the boxes. Now extract the co-ordinates left,top,right,bottom
-
     boxes = []
     indices = np.indices(votes.shape).T[:, :, [1, 0]]
 
