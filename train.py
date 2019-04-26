@@ -1,3 +1,7 @@
+# Sample command
+# python3 train.py --dataset GTDB --dataset_root /home/psm2208/data/GTDB/ --cuda True --visdom True
+# --batch_size 32 --num_workers 4 --layers_to_freeze 0 --save_folder weights_512 --model_type 512
+
 from data import *
 from utils.augmentations import SSDAugmentation
 from layers.modules import MultiBoxLoss
@@ -60,6 +64,8 @@ parser.add_argument('--suffix', default="_10", type=str,
                     help='Stride % used while generating images')
 parser.add_argument('--type', default="processed_train", type=str,
                     help='Type of image set to use. This is list of file names, one per line')
+parser.add_argument('--use_char_info', default=False, type=str2bool,
+                    help='Whether to use char position info and labels')
 
 args = parser.parse_args()
 

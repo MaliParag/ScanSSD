@@ -26,7 +26,8 @@ stride = 1
 n_horizontal = int(intermediate_width / crop_size)  # 4
 n_vertical = int(intermediate_height / crop_size)  # 5
 
-def combine_math_regions(math_files_list, image_path, output_image):
+def combine_math_regions(pdf_name, page_num, math_files_list, image_path, output_image,
+                         gt_dir, thresh):
 
     """
     It is called for each page in the pdf
@@ -110,26 +111,41 @@ def combine_math_regions(math_files_list, image_path, output_image):
         else:
             math_regions = np.concatenate((math_regions, annotations_map[key]), axis=0)
 
+
     math_regions = math_regions.astype(int)
+
+    # intital math regions
+    math_regions_initial = np.copy(math_regions)
 
     #math_regions = perform_nms(math_regions)
     #math_regions = overlap_expand(math_regions)
 
     #math_regions = math_regions.tolist()
 
-    math_regions = voting_algo(math_regions, image, algorithm='equal', thresh_votes=20)
+    # This will give final math regions
+    math_regions = voting_algo(math_regions, image, algorithm='equal', thresh_votes=thresh)
     #math_regions = voting_algo(math_regions, image, algorithm='sum_score', thresh_votes=20)
     #math_regions = voting_algo(math_regions, image, algorithm='avg_score', thresh_votes=0.3)
 
     print(len(math_regions))
 
-    visualize.draw_boxes_cv(image, math_regions, output_image)
+    gt_path = os.path.join(gt_dir, pdf_name, page_num + ".pmath")
+    gt_regions = np.genfromtxt(gt_path, delimiter=',')
+    gt_regions = gt_regions.astype(int)
 
-    # Works only with 'none' stitching method
+    # if there is only one entry convert it to correct form required
+    if len(gt_regions.shape) == 1:
+        gt_regions = gt_regions.reshape(1, -1)
+
+    #visualize.draw_boxes_cv(image, math_regions, gt_regions.tolist(), output_image)
+    visualize.draw_all_boxes(image, math_regions_initial, math_regions, gt_regions.tolist(), output_image)
+
+    # Following works only with 'none' stitching method
     # Can't use any stitching method with this function
     #visualize.draw_stitched_boxes(image, math_regions, output_image)
 
     return math_regions
+
 
 def voting_equal(votes, math_regions):
     # cast votes for the regions
@@ -139,10 +155,9 @@ def voting_equal(votes, math_regions):
 
     return votes
 
-def voting_avg_score(votes, math_regions, original_height, original_width):
+def voting_avg_score(votes, math_regions):
 
-
-    counts = np.zeros(shape=(original_height, original_width))
+    counts = np.zeros(shape=votes.shape)
 
     # cast votes for the regions
     for box in math_regions:
@@ -172,6 +187,15 @@ def voting_sum_score(votes, math_regions):
 
     return votes
 
+def voting_heuristic_score(votes, math_regions):
+
+    # All the connected components should have equal score
+
+    # Threshold on the score
+
+    # Threshold on the votes
+    pass
+
 def vote_for_regions(math_regions, image, algorithm, thresh_votes):
 
     original_width = image.shape[1]
@@ -185,7 +209,7 @@ def vote_for_regions(math_regions, image, algorithm, thresh_votes):
 
     elif algorithm == 'avg_score':
         thresh_votes = thresh_votes * 100
-        votes = voting_equal(votes, math_regions, original_height, original_width)
+        votes = voting_equal(votes, math_regions)
 
     else:  # algorithm='equal'
         votes = voting_equal(votes, math_regions)
@@ -197,13 +221,8 @@ def vote_for_regions(math_regions, image, algorithm, thresh_votes):
 
     return votes
 
+
 def voting_algo(math_regions, image, algorithm='equal', thresh_votes=20):
-    """
-    My voting algorithm
-    :param math_regions:
-    :param image:
-    :return:
-    """
 
     # vote for the regions
     votes = vote_for_regions(math_regions, image, algorithm, thresh_votes)
@@ -223,25 +242,40 @@ def voting_algo(math_regions, image, algorithm='equal', thresh_votes=20):
 
     # this defines the connection filter
     # we allow any kind of connection
-    structure = np.ones((3, 3), dtype=np.int)
+    votes = votes.astype(int)
+    vis2 = cv2.cvtColor(votes, cv2.COLOR_GRAY2BGR)
 
-    # find the rectangular regions
-    # votes = ndimage.binary_opening(votes, structure=structure)
-    labeled, ncomponents = label(votes, structure)
+    ret, thresh = cv2.threshold(votes, thresh_votes, 255, cv2.THRESH_BINARY)
+    contours, _ = cv2.findContours(thresh, 1, 2)
 
-    # found the boxes. Now extract the co-ordinates left,top,right,bottom
-    boxes = []
-    indices = np.indices(votes.shape).T[:, :, [1, 0]]
+    for cnt in contours:
+        approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)
+        print(len(approx))
+        if len(approx) == 4:
+            #print("rectangle")
+            cv2.drawContours(image, [cnt], 0, 255, -1)
 
-    for i in range(ncomponents):
+    cv2.imwrite("test.png", image)
 
-        labels = (labeled == (i+1))
-        pixels = indices[labels.T]
-
-        box = [min(pixels[:, 0]), min(pixels[:, 1]), max(pixels[:, 0]), max(pixels[:, 1])]
-        boxes.append(box)
-
-    return boxes
+    # structure = np.ones((3, 3), dtype=np.int)
+    #
+    # # find the rectangular regions
+    # # votes = ndimage.binary_opening(votes, structure=structure)
+    # labeled, ncomponents = label(votes, structure)
+    #
+    # # found the boxes. Now extract the co-ordinates left,top,right,bottom
+    # boxes = []
+    # indices = np.indices(votes.shape).T[:, :, [1, 0]]
+    #
+    # for i in range(ncomponents):
+    #
+    #     labels = (labeled == (i+1))
+    #     pixels = indices[labels.T]
+    #
+    #     box = [min(pixels[:, 0]), min(pixels[:, 1]), max(pixels[:, 0]), max(pixels[:, 1])]
+    #     boxes.append(box)
+    #
+    # return boxes
 
 
 def find_blank_rows(image, line_spacing=15):
@@ -346,7 +380,7 @@ def intersects(first, other):
 
 def stitch_patches(args):
 
-    pdf_name, annotations_dir, output_dir, image_dir = args
+    pdf_name, annotations_dir, output_dir, image_dir, gt_dir, thresh = args
 
     print('Processing ', pdf_name)
 
@@ -386,9 +420,13 @@ def stitch_patches(args):
 
         # basically it is called for each page in the pdf
         math_regions = combine_math_regions(
+                        pdf_name,
+                        key,
                         annotations_map[pdf_name][key],
                         os.path.join(image_dir, pdf_name, key + '.png'),
-                        os.path.join(output_dir, pdf_name, key + '.png'))
+                        os.path.join(output_dir, pdf_name, key + '.png'),
+                        gt_dir,
+                        thresh)
 
         for math_region in math_regions:
             math_region.insert(0,int(key)-1)
@@ -397,7 +435,8 @@ def stitch_patches(args):
     math_file.close()
 
 
-def patch_stitch(filename, annotations_dir, output_dir, image_dir='/home/psm2208/data/GTDB/images/'):
+def patch_stitch(filename, annotations_dir, output_dir, image_dir='/home/psm2208/data/GTDB/images/',
+                 gt_dir="/home/psm2208/data/GTDB/", thresh=20):
 
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
@@ -409,7 +448,7 @@ def patch_stitch(filename, annotations_dir, output_dir, image_dir='/home/psm2208
         pdf_name = pdf_name.strip()
 
         if pdf_name != '':
-            training_pdf_names_list.append((pdf_name, annotations_dir, output_dir, image_dir))
+            training_pdf_names_list.append((pdf_name, annotations_dir, output_dir, image_dir, gt_dir, thresh))
 
     training_pdf_names.close()
 
@@ -429,9 +468,12 @@ if __name__ == '__main__':
 
     #patch_stitch(filename, sys.argv[2], sys.argv[3])
     stride = 0.1
-    stitch_patches(("InvM_1999_163_181", "/home/psm2208/code/eval/Train_Focal_10_25",
-                    "/home/psm2208/code/eval/Train_Focal_10_25/voting_equal_rows",
-                    '/home/psm2208/data/GTDB/images/'))
+    #stitch_patches(("InvM_1999_163_181", "/home/psm2208/code/eval/Train_Focal_10_25",
+    #                "/home/psm2208/code/eval/Train_Focal_10_25/voting_equal_rows",
+    #                '/home/psm2208/data/GTDB/images/'))
 
-    #patch_stitch("/home/psm2208/data/GTDB/train_pdf", "/home/psm2208/code/eval/Train_Focal_10_25",
-    #            "/home/psm2208/code/eval/Train_Focal_10_25/voting_equal_rows", '/home/psm2208/data/GTDB/images/')
+    thresh = float(sys.argv[1])
+
+    patch_stitch("/home/psm2208/data/GTDB/train_pdf", "/home/psm2208/code/eval/Train3_Focal_10_25",
+                "/home/psm2208/code/eval/Train3_Focal_10_25/voting_equal_" + str(thresh),
+                 '/home/psm2208/data/GTDB/images/', "/home/psm2208/data/GTDB/annotations/", thresh)

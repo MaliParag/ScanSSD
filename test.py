@@ -23,6 +23,7 @@ parser.add_argument('--suffix', default="_10", type=str, help='suffix of directo
 parser.add_argument('--exp_name', default="SSD", help='Name of the experiment. Will be used to generate output')
 parser.add_argument('--model_type', default=300, type=int,
                     help='Type of ssd model, ssd300 or ssd512')
+parser.add_argument('--use_char_info', default=False, type=bool, help='Whether or not to use char info')
 
 parser.add_argument('-f', default=None, type=str, help="Dummy arg so we can load in Jupyter Notebooks")
 
@@ -46,7 +47,7 @@ def test_net(args, net, gpu_id, testset, transform, thresh):
     num_images = len(testset)
     f = open(filename, "w")
 
-    num_images = 200
+    #num_images = 200
     for i in range(num_images):
         print('Testing image {:d}/{:d}....'.format(i+1, num_images))
         img = testset.pull_image(i)
@@ -102,11 +103,13 @@ def test_voc():
     net.load_state_dict(torch.load(args.trained_model))
     net.eval()
     print('Finished loading model!')
+
     # load data
     testset = VOCDetection(args.dataset_root, [('2007', 'test')], None, VOCAnnotationTransform())
     if args.cuda:
         net = net.cuda()
         cudnn.benchmark = True
+
     # evaluation
     test_net(args.save_folder, net, args.cuda, testset,
              BaseTransform(net.size, (104, 117, 123)),
@@ -141,6 +144,7 @@ def test_gtdb():
     test_net(args, net, gpu_id, testset,
              BaseTransform(net.size, (104, 117, 123)),
              thresh=args.visual_threshold)
+
 
 if __name__ == '__main__':
     #test_voc()

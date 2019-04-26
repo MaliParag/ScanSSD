@@ -40,8 +40,53 @@ def draw_stitched_boxes(im, data, outpath):
     plt.savefig(outpath, dpi=600)
     plt.close()
 
+def draw_all_boxes(im, data, recognized_boxes, gt_boxes, outpath):
 
-def draw_boxes_cv(image, recognized_boxes, outpath):
+    # Create figure and axes
+    fig, ax = plt.subplots(1)
+
+    # sort based on the confs. Confs is column 4
+    data = data[data[:, 4].argsort()]
+
+    # Display the image
+    ax.imshow(im)
+
+    width, height, channels = im.shape
+    heatmap = np.zeros([width, height])
+
+    for box in data:
+        heatmap[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = box[4]
+
+    # recognized boxes are green
+    for box in recognized_boxes:
+        rect = patches.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1],
+                                 linewidth=0.25, edgecolor='g', facecolor='none')
+        # Add the patch to the Axes
+        ax.add_patch(rect)
+
+    # ground truth are red
+    for box in gt_boxes:
+        rect = patches.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1],
+                                 linewidth=0.25, edgecolor='b', facecolor='none')
+        # Add the patch to the Axes
+        ax.add_patch(rect)
+
+    # Following line makes sure that all the heatmaps are in the scale, 0 to 1
+    # So color assigned to different scores are consistent across heatmaps for
+    # different images
+    heatmap[0:1, 0:1] = 1
+    heatmap[0:1, 1:2] = 0
+
+    plt.imshow(heatmap, alpha=0.4, cmap='hot', interpolation='nearest')
+    plt.colorbar()
+
+    plt.title("Stitching visualization")
+    plt.show()
+    plt.savefig(outpath, dpi=600)
+    plt.close()
+
+
+def draw_boxes_cv(image, recognized_boxes, gt_boxes, outpath):
 
     '''
     :param image:
@@ -50,7 +95,13 @@ def draw_boxes_cv(image, recognized_boxes, outpath):
     :return:
     '''
 
+    #(BGR)
+    # detected is green
     for box in recognized_boxes:
+        cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 3)
+
+    # ground truth is blue
+    for box in gt_boxes:
         cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 0, 0), 3)
 
     cv2.imwrite(outpath, image)
@@ -105,7 +156,7 @@ def draw_boxes(args, im, recognized_boxes, boxes, confs, scale, img_id):
 
         for box in recognized_boxes:
             rect = patches.Rectangle((box[0], box[1]), box[2]-box[0], box[3] - box[1],
-                                     linewidth=1, edgecolor='r', facecolor='none')
+                                     linewidth=1, edgecolor='g', facecolor='none')
             #Add the patch to the Axes
             ax.add_patch(rect)
 
