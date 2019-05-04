@@ -42,6 +42,9 @@ def draw_stitched_boxes(im, data, outpath):
 
 def draw_all_boxes(im, data, recognized_boxes, gt_boxes, outpath):
 
+    if len(data) == 0:
+        return
+
     # Create figure and axes
     fig, ax = plt.subplots(1)
 
@@ -54,22 +57,25 @@ def draw_all_boxes(im, data, recognized_boxes, gt_boxes, outpath):
     width, height, channels = im.shape
     heatmap = np.zeros([width, height])
 
-    for box in data:
-        heatmap[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = box[4]
+    if data is not None:
+        for box in data:
+            heatmap[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = box[4]
 
-    # recognized boxes are green
-    for box in recognized_boxes:
-        rect = patches.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1],
-                                 linewidth=0.25, edgecolor='g', facecolor='none')
-        # Add the patch to the Axes
-        ax.add_patch(rect)
+    if recognized_boxes is not None:
+        # recognized boxes are green
+        for box in recognized_boxes:
+            rect = patches.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1],
+                                     linewidth=0.25, edgecolor='g', facecolor='none')
+            # Add the patch to the Axes
+            ax.add_patch(rect)
 
-    # ground truth are red
-    for box in gt_boxes:
-        rect = patches.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1],
-                                 linewidth=0.25, edgecolor='b', facecolor='none')
-        # Add the patch to the Axes
-        ax.add_patch(rect)
+    if gt_boxes is not None:
+        # ground truth are red
+        for box in gt_boxes:
+            rect = patches.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1],
+                                     linewidth=0.25, edgecolor='b', facecolor='none')
+            # Add the patch to the Axes
+            ax.add_patch(rect)
 
     # Following line makes sure that all the heatmaps are in the scale, 0 to 1
     # So color assigned to different scores are consistent across heatmaps for

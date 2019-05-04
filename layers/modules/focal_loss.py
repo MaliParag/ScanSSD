@@ -8,7 +8,7 @@ from torch.autograd import Variable
 
 class FocalLoss(nn.Module):
 
-    def __init__(self, focusing_param=2, balance_param=1):
+    def __init__(self, focusing_param=2, balance_param=0.25): #TODO try changing balance_param
         super(FocalLoss, self).__init__()
 
         self.focusing_param = focusing_param

@@ -61,7 +61,7 @@ parser.add_argument('--layers_to_freeze', default=20, type=float,
 parser.add_argument('--model_type', default=300, type=int,
                     help='Type of ssd model, ssd300 or ssd512')
 parser.add_argument('--suffix', default="_10", type=str,
-                    help='Stride % used while generating images')
+                    help='Stride % used while generating images or dpi from which images was generated')
 parser.add_argument('--type', default="processed_train", type=str,
                     help='Type of image set to use. This is list of file names, one per line')
 parser.add_argument('--use_char_info', default=False, type=str2bool,

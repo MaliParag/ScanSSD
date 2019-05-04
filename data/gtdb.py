@@ -70,11 +70,14 @@ class GTDBDetection(data.Dataset):
         self.transform = transform
         self.target_transform = target_transform
         self.name = dataset_name
+        self.use_char_info = args.use_char_info
+
         #self._annopath = osp.join('%s', 'annotations', '%s.pmath')
         #self._imgpath = osp.join('%s', 'images', '%s.png')
 
         self._annopath = osp.join('%s', 'processed_annotations' + args.suffix, '%s.pmath')
         self._imgpath = osp.join('%s', 'processed_images' + args.suffix, '%s.png')
+        self._char_annopath = osp.join('%s', 'processed_char_annotations' + args.suffix, '%s.pchar')
 
         self.ids = list()
 
@@ -88,13 +91,51 @@ class GTDBDetection(data.Dataset):
     def __len__(self):
         return len(self.ids)
 
+
+    def read_image(self, img_id):
+
+        image = cv2.imread(self._imgpath % img_id, cv2.IMREAD_COLOR)
+
+        if self.use_char_info:
+
+            # First channel gray image
+            gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            image[:, :, 0] = gray_image
+
+            second_channel = image[:, :, 1]
+            third_channel = image[:, :, 2]
+
+            second_channel[:, :] = 0
+            third_channel[:, :] = 0
+
+            char_info = np.genfromtxt((self._char_annopath % img_id), dtype=str, delimiter=',')
+            if len(char_info.shape) == 1:
+                char_info = char_info.reshape(1, -1)
+
+            char_info = char_info.tolist()
+
+            if len(char_info) > 0:
+                for info in char_info:
+                    if len(info) > 0:
+                        # second channel - type of char using ocr code
+                        second_channel[int(info[1]):int(info[3]), int(info[0]):int(info[2])] = \
+                            int(info[-1][:2], 16)
+
+                        # third channel - char label
+                        third_channel[int(info[1]):int(info[3]), int(info[0]):int(info[2])] = \
+                            int(info[-1][2:], 16)
+
+        return image
+
     def pull_item(self, index):
 
         # TODO: Can not handle the case, when target is none
         img_id = self.ids[index]
+        #print(img_id)
+
         target = self.read_annotations(self._annopath % img_id)
 
-        img = cv2.imread(self._imgpath % img_id)
+        img = self.read_image(img_id)
         height, width, channels = img.shape
 
         if self.target_transform is not None:
@@ -123,8 +164,7 @@ class GTDBDetection(data.Dataset):
             PIL img
         '''
         img_id = self.ids[index]
-
-        return cv2.imread(self._imgpath % img_id, cv2.IMREAD_COLOR)
+        return self.read_image(img_id)
         #return cv2.imread('/home/psm2208/Workspace/test/output.jpg', cv2.IMREAD_COLOR)
 
     def pull_anno(self, index, type='train'):

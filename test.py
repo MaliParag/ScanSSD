@@ -24,6 +24,7 @@ parser.add_argument('--exp_name', default="SSD", help='Name of the experiment. W
 parser.add_argument('--model_type', default=300, type=int,
                     help='Type of ssd model, ssd300 or ssd512')
 parser.add_argument('--use_char_info', default=False, type=bool, help='Whether or not to use char info')
+parser.add_argument('--limit', default=-1, type=int, help='limit on number of test examples')
 
 parser.add_argument('-f', default=None, type=str, help="Dummy arg so we can load in Jupyter Notebooks")
 
@@ -47,7 +48,9 @@ def test_net(args, net, gpu_id, testset, transform, thresh):
     num_images = len(testset)
     f = open(filename, "w")
 
-    #num_images = 200
+    if args.limit != -1:
+        num_images = args.limit
+
     for i in range(num_images):
         print('Testing image {:d}/{:d}....'.format(i+1, num_images))
         img = testset.pull_image(i)

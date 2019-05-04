@@ -42,22 +42,22 @@ def generate_subimages(pdf_name ='Alford94'):
     char_filepath = os.path.join(char_dir, pdf_name + ".char")
     char_file_present = os.path.isfile(char_filepath)
 
-    # TODO if math_file_present:
-    #     math_file = open(math_filepath, 'r')
-    #
-    #     boxes = {}
-    #
-    #     for line in math_file:
-    #         box = line.split(",")
-    #         idx = int(box[0]) + 1
-    #         box = box[1:]
-    #
-    #         box = list(map(int, box))
-    #
-    #         if idx not in boxes:
-    #             boxes[idx] = []
-    #
-    #         boxes[idx].append(box)
+    if math_file_present:
+        math_file = open(math_filepath, 'r')
+
+        boxes = {}
+
+        for line in math_file:
+            box = line.split(",")
+            idx = int(box[0]) + 1
+            box = box[1:]
+
+            box = list(map(int, box))
+
+            if idx not in boxes:
+                boxes[idx] = []
+
+            boxes[idx].append(box)
 
     if char_file_present:
         char_file = open(char_filepath, 'r')
@@ -92,19 +92,19 @@ def generate_subimages(pdf_name ='Alford94'):
 
         image = cv2.resize(image, (intermediate_width, intermediate_height))
 
-        # TODO if math_file_present:
-        #     if page_id in boxes:
-        #         current_boxes = boxes[page_id]
-        #     else:
-        #         current_boxes = []
-        #
-        #     # preprocess the boxes
-        #     for box in current_boxes:
-        #
-        #         box[0] = box[0] * intermediate_width_ratio
-        #         box[1] = box[1] * intermediate_height_ratio
-        #         box[2] = box[2] * intermediate_width_ratio
-        #         box[3] = box[3] * intermediate_height_ratio
+        if math_file_present:
+            if page_id in boxes:
+                current_boxes = boxes[page_id]
+            else:
+                current_boxes = []
+
+            # preprocess the boxes
+            for box in current_boxes:
+
+                box[0] = box[0] * intermediate_width_ratio
+                box[1] = box[1] * intermediate_height_ratio
+                box[2] = box[2] * intermediate_width_ratio
+                box[3] = box[3] * intermediate_height_ratio
 
         if char_file_present:
             if page_id in char_boxes:
@@ -138,9 +138,9 @@ def generate_subimages(pdf_name ='Alford94'):
 
                 print('Processing sub image : ', subimg_id)
 
-                #TODO if math_file_present:
-                #     out_math_file = os.path.join(output_math_dir, pdf_name, str(page_id), str(subimg_id) + ".pmath")
-                #     out_math = open(out_math_file, "w")
+                if math_file_present:
+                     out_math_file = os.path.join(output_math_dir, pdf_name, str(page_id), str(subimg_id) + ".pmath")
+                     out_math = open(out_math_file, "w")
 
                 if char_file_present:
                     out_char_file = os.path.join(output_char_dir, pdf_name, str(page_id), str(subimg_id) + ".pchar")
@@ -152,8 +152,8 @@ def generate_subimages(pdf_name ='Alford94'):
                 y_l = int(np.round(crop_size * j))
                 y_h = int(np.round(crop_size * (j + 1)))
 
-                # TODO cropped_image = image[x_l: x_h, y_l: y_h, :]
-                #cropped_image = cv2.resize(cropped_image, (final_width, final_height))
+                cropped_image = image[x_l: x_h, y_l: y_h, :]
+                cropped_image = cv2.resize(cropped_image, (final_width, final_height))
 
                 # left, top, right, bottom
                 image_box = [y_l, x_l, y_h, x_h]
@@ -164,43 +164,43 @@ def generate_subimages(pdf_name ='Alford94'):
 
                 count = 0
 
-                # TODO if math_file_present:
-                #     if page_id in boxes:
-                #         current_page_boxes = copy.deepcopy(boxes[page_id])
-                #     else:
-                #         current_page_boxes = []
-                #
-                #     # if math intersects only consider the region which
-                #     # is part of the current bounding box
-                #     for box in current_page_boxes:
-                #         if intersects(image_box, box):
-                #             #print('intersects ', box)
-                #
-                #             # left, top, right, bottom
-                #             # y increases downwards
-                #
-                #             #crop the boxes to fit into image region
-                #             box[0] = max(y_l, box[0])
-                #             box[1] = max(x_l, box[1])
-                #             box[2] = min(y_h, box[2])
-                #             box[3] = min(x_h, box[3])
-                #
-                #             # Translate to origin
-                #             box[0] = box[0] - y_l
-                #             box[2] = box[2] - y_l
-                #
-                #             box[1] = box[1] - x_l
-                #             box[3] = box[3] - x_l
-                #
-                #             # scaling
-                #             box[2] = int(np.round(box[2] * final_width_ratio))
-                #             box[0] = int(np.round(box[0] * final_width_ratio))
-                #
-                #             box[3] = int(np.round(box[3] * final_height_ratio))
-                #             box[1] = int(np.round(box[1] * final_height_ratio))
-                #
-                #             count = count + 1
-                #             out_math.write(','.join(str(x) for x in box))
+                if math_file_present:
+                    if page_id in boxes:
+                        current_page_boxes = copy.deepcopy(boxes[page_id])
+                    else:
+                        current_page_boxes = []
+
+                    # if math intersects only consider the region which
+                    # is part of the current bounding box
+                    for box in current_page_boxes:
+                        if intersects(image_box, box):
+                            #print('intersects ', box)
+
+                            # left, top, right, bottom
+                            # y increases downwards
+
+                            #crop the boxes to fit into image region
+                            box[0] = max(y_l, box[0])
+                            box[1] = max(x_l, box[1])
+                            box[2] = min(y_h, box[2])
+                            box[3] = min(x_h, box[3])
+
+                            # Translate to origin
+                            box[0] = box[0] - y_l
+                            box[2] = box[2] - y_l
+
+                            box[1] = box[1] - x_l
+                            box[3] = box[3] - x_l
+
+                            # scaling
+                            box[2] = int(np.round(box[2] * final_width_ratio))
+                            box[0] = int(np.round(box[0] * final_width_ratio))
+
+                            box[3] = int(np.round(box[3] * final_height_ratio))
+                            box[1] = int(np.round(box[1] * final_height_ratio))
+
+                            count = count + 1
+                            out_math.write(','.join(str(x) for x in box))
 
                 if char_file_present:
                     if page_id in char_boxes:
@@ -242,17 +242,17 @@ def generate_subimages(pdf_name ='Alford94'):
 
                 fig_name = os.path.join(output_image_dir, pdf_name, str(page_id), str(subimg_id) + ".png")
                 print("Saving " + fig_name)
-                #TODO cv2.imwrite(fig_name, cropped_image)
+                cv2.imwrite(fig_name, cropped_image)
                 subimg_id = subimg_id + 1
 
-                # TODO if math_file_present:
-                #
-                #     out_math.close()
-                #     out_char.close()
-                #     if count == 0:
-                #         # if no math regions, delete the file
-                #         #os.remove(out_math_file)
-                #         os.remove(out_char_file)
+                if math_file_present:
+
+                    out_math.close()
+                    out_char.close()
+                    if count == 0:
+                        # if no math regions, delete the file
+                        os.remove(out_math_file)
+                        os.remove(out_char_file)
 
 
 # check if two rectangles intersect
@@ -310,4 +310,3 @@ if __name__ == '__main__':
     pool.map(generate_subimages, training_pdf_names_list)
     pool.close()
     pool.join()
-
