@@ -60,14 +60,19 @@ def draw_all_boxes(im, data, recognized_boxes, gt_boxes, outpath):
     if data is not None:
         for box in data:
             heatmap[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = box[4]
+            #rect = patches.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1],
+            #                        linewidth=0.25, edgecolor='m', facecolor='none')
+            #Add the patch to the Axes
+            #ax.add_patch(rect)
 
     if recognized_boxes is not None:
         # recognized boxes are green
-        for box in recognized_boxes:
-            rect = patches.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1],
-                                     linewidth=0.25, edgecolor='g', facecolor='none')
-            # Add the patch to the Axes
-            ax.add_patch(rect)
+        # for box in recognized_boxes:
+        #     rect = patches.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1],
+        #                              linewidth=1, edgecolor='g', facecolor='none')
+        #     # Add the patch to the Axes
+        #     ax.add_patch(rect)
+        pass
 
     if gt_boxes is not None:
         # ground truth are red

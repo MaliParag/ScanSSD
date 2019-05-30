@@ -119,7 +119,7 @@ def combine_math_regions(pdf_name, page_num, math_files_list, image_path, output
     # intital math regions
     #math_regions_initial = np.copy(math_regions)
 
-    math_regions = preprocess_math_regions(math_regions, image)
+    #math_regions = preprocess_math_regions(math_regions, image)
     processed_math_regions = np.copy(math_regions)
 
     #math_regions = perform_nms(math_regions)
