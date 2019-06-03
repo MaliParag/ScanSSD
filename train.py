@@ -61,7 +61,7 @@ parser.add_argument('--layers_to_freeze', default=20, type=float,
 parser.add_argument('--model_type', default=300, type=int,
                     help='Type of ssd model, ssd300 or ssd512')
 parser.add_argument('--suffix', default="_10", type=str,
-                    help='Stride % used while generating images or dpi from which images was generated')
+                    help='Stride % used while generating images or dpi from which images was generated or some other identifier')
 parser.add_argument('--type', default="processed_train", type=str,
                     help='Type of image set to use. This is list of file names, one per line')
 parser.add_argument('--use_char_info', default=False, type=str2bool,
@@ -146,6 +146,7 @@ def train():
     # loss counters
     loc_loss = 0
     conf_loss = 0
+    min_total_loss = float('inf')
     epoch = 0
     print('Loading the dataset...')
 
@@ -171,6 +172,7 @@ def train():
     for iteration in range(args.start_iter, cfg['max_iter']):
 
         t0 = time.time()
+
 
         if args.visdom and iteration != 0 and (iteration % epoch_size == 0):
             epoch += 1
@@ -227,6 +229,13 @@ def train():
                        os.path.join(
                         args.save_folder, 'ssd' + str(args.model_type) + args.dataset +
                         repr(iteration) + '.pth'))
+
+        elif loss.item() < min_total_loss:
+            min_total_loss = loss.item()
+            torch.save(ssd_net.state_dict(),
+                       os.path.join(
+                           args.save_folder, 'best_ssd' + str(args.model_type) + args.dataset +
+                           repr(iteration) + '.pth'))
 
     torch.save(ssd_net.state_dict(),
                args.save_folder + '' + args.dataset + '.pth')

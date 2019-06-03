@@ -13,9 +13,9 @@ from multiprocessing import Pool
 # Default parameters for thr GTDB dataset
 intermediate_width = 4800
 intermediate_height = 6000
-crop_size = 1200
-final_width = 300
-final_height = 300
+crop_size = 1800
+final_width = 512
+final_height = 512
 stride = 0.1
 
 n_horizontal = int(intermediate_width / crop_size)  # 4
@@ -201,6 +201,8 @@ def generate_subimages(pdf_name ='Alford94'):
 
                             count = count + 1
                             out_math.write(','.join(str(x) for x in box))
+                            out_math.write("\n")
+                            #cv2.rectangle(cropped_image, (box[0], box[1]), (box[2], box[3]), (255, 0, 0), 3)
 
                 if char_file_present:
                     if page_id in char_boxes:
@@ -238,7 +240,7 @@ def generate_subimages(pdf_name ='Alford94'):
                             box[1] = int(np.round(box[1] * final_height_ratio))
 
                             out_char.write(','.join(str(x) for x in box))
-
+                            #out_char.write("\n")
 
                 fig_name = os.path.join(output_image_dir, pdf_name, str(page_id), str(subimg_id) + ".png")
                 print("Saving " + fig_name)
@@ -286,7 +288,7 @@ if __name__ == '__main__':
 
     training_pdf_names.close()
 
-    suffix = str(int(100 * stride))
+    suffix = sys.argv[3] #str(int(100 * stride))
 
     char_dir = '/home/psm2208/data/GTDB/char_annotations/'
     math_dir = '/home/psm2208/data/GTDB/annotations/'
@@ -306,7 +308,7 @@ if __name__ == '__main__':
     if not os.path.exists(output_char_dir):
         os.makedirs(output_char_dir)
 
-    pool = Pool(processes=16)
+    pool = Pool(processes=24)
     pool.map(generate_subimages, training_pdf_names_list)
     pool.close()
     pool.join()
