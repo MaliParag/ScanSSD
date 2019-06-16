@@ -8,7 +8,6 @@ import numpy as np
 import cv2
 
 
-
 def draw_stitched_boxes(im, data, outpath):
 
     # Create figure and axes
@@ -67,12 +66,12 @@ def draw_all_boxes(im, data, recognized_boxes, gt_boxes, outpath):
 
     if recognized_boxes is not None:
         # recognized boxes are green
-        # for box in recognized_boxes:
-        #     rect = patches.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1],
-        #                              linewidth=1, edgecolor='g', facecolor='none')
-        #     # Add the patch to the Axes
-        #     ax.add_patch(rect)
-        pass
+        for box in recognized_boxes:
+             rect = patches.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1],
+                                      linewidth=1, edgecolor='g', facecolor='none')
+             # Add the patch to the Axes
+             ax.add_patch(rect)
+
 
     if gt_boxes is not None:
         # ground truth are red

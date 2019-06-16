@@ -31,13 +31,13 @@ def split(args):
             boxes = map[key]
 
             # create processed math file
-            file_op = open(os.path.join(dest, pdf_name, str(int(key) + 1)) + ".p" + ext, "w")
+            file_op = open(os.path.join(out_dir, pdf_name, str(int(key) + 1)) + ".p" + ext, "w")
 
             for box in boxes:
                 # xmin, ymin, xmax, ymax
                 file_op.write(box[0] + "," + box[1] + "," + box[2] + "," + box[3] + "\n")
 
-            math_op.close()
+            file_op.close()
             file_ip.close()
 
     elif ext == "char":

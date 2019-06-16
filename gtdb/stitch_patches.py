@@ -20,8 +20,8 @@ import copy
 intermediate_width = 4800
 intermediate_height = 6000
 crop_size = 1200
-final_width = 512
-final_height = 512
+final_width = 300
+final_height = 300 # because initial image size is 300 * 300 even for 512 * 512 network
 
 stride = 0.1
 
@@ -39,134 +39,146 @@ def combine_math_regions(pdf_name, page_num, math_files_list, char_filepath, ima
     :param output_image:
     :return:
     """
+    try:
+        print(image_path)
+        image = cv2.imread(image_path)
 
-    print(image_path)
-    image = cv2.imread(image_path)
+        original_width = image.shape[1]
+        original_height = image.shape[0]
+        print('Read image with height, width : ', original_height, original_width)
 
-    original_width = image.shape[1]
-    original_height = image.shape[0]
-    print('Read image with height, width : ', original_height, original_width)
+        intermediate_width_ratio = original_width / intermediate_width
+        intermediate_height_ratio = original_height / intermediate_height
 
-    intermediate_width_ratio = original_width / intermediate_width
-    intermediate_height_ratio = original_height / intermediate_height
+        annotations_map = {}
 
-    annotations_map = {}
+        for math_file in math_files_list:
 
-    for math_file in math_files_list:
+            name = math_file.split(os.sep)[-1]
 
-        name = math_file.split(os.sep)[-1]
+            if os.stat(math_file).st_size == 0:
+                continue
 
-        if os.stat(math_file).st_size == 0:
-            continue
+            data = np.genfromtxt(math_file, delimiter=',')
 
-        data = np.genfromtxt(math_file, delimiter=',')
+            # if there is only one entry convert it to correct form required
+            if len(data.shape) == 1:
+                data = data.reshape(1, -1)
 
-        # if there is only one entry convert it to correct form required
-        if len(data.shape) == 1:
-            data = data.reshape(1, -1)
+            annotations_map[name] = data
 
-        annotations_map[name] = data
+        # Read char data
 
-    # Read char data
+        if char_filepath != "":
+            char_data = np.genfromtxt(char_filepath, delimiter=',')
+            char_data = char_data[:,2:6]
 
-    if char_filepath != "":
-        char_data = np.genfromtxt(char_filepath, delimiter=',')
-        char_data = char_data[:,2:6]
+            # if there is only one entry convert it to correct form required
+            if len(char_data.shape) == 1:
+                char_data = char_data.reshape(1, -1)
 
-        # if there is only one entry convert it to correct form required
-        if len(char_data.shape) == 1:
-            char_data = char_data.reshape(1, -1)
-
-    else:
-        char_data = []
-
-
-    h = np.arange(0, n_horizontal - 1 + stride, stride)
-    v = np.arange(0, n_vertical - 1 + stride, stride)
-
-    for filename in annotations_map:
-
-        data_arr = annotations_map[filename]
-        patch_num = int(filename.split("_")[-1].split(".csv")[0])
-
-        x_offset = h[(patch_num-1) % len(h)]
-        y_offset = v[int((patch_num-1) / len(h))]
-
-        if data_arr is None:
-            continue
-
-        # find scaling factors
-        final_width_ratio = crop_size/final_width
-        final_height_ratio = crop_size/final_height
-
-        data_arr[:, 0] = data_arr[:, 0] * final_width_ratio
-        data_arr[:, 2] = data_arr[:, 2] * final_width_ratio
-        data_arr[:, 1] = data_arr[:, 1] * final_height_ratio
-        data_arr[:, 3] = data_arr[:, 3] * final_height_ratio
-
-        data_arr[:, 0] = data_arr[:, 0] + x_offset * crop_size
-        data_arr[:, 2] = data_arr[:, 2] + x_offset * crop_size
-        data_arr[:, 1] = data_arr[:, 1] + y_offset * crop_size
-        data_arr[:, 3] = data_arr[:, 3] + y_offset * crop_size
-
-        data_arr[:, 0] = data_arr[:, 0] * intermediate_width_ratio
-        data_arr[:, 2] = data_arr[:, 2] * intermediate_width_ratio
-        data_arr[:, 1] = data_arr[:, 1] * intermediate_height_ratio
-        data_arr[:, 3] = data_arr[:, 3] * intermediate_height_ratio
-
-        # multiply score by 100. Because later we convert data_arr to int datatype
-        data_arr[:, 4] = data_arr[:, 4] * 100
-
-        annotations_map[filename] = data_arr
-
-    math_regions = np.array([])
-
-    for key in annotations_map:
-
-        if len(math_regions)==0:
-            math_regions = annotations_map[key][:,:]
         else:
-            math_regions = np.concatenate((math_regions, annotations_map[key]), axis=0)
+            char_data = []
 
 
-    math_regions = math_regions.astype(int)
+        h = np.arange(0, n_horizontal - 1 + stride, stride)
+        v = np.arange(0, n_vertical - 1 + stride, stride)
 
-    # intital math regions
-    #math_regions_initial = np.copy(math_regions)
+        for filename in annotations_map:
 
-    #math_regions = preprocess_math_regions(math_regions, image)
-    processed_math_regions = np.copy(math_regions)
+            data_arr = annotations_map[filename]
+            patch_num = int(filename.split("_")[-1].split(".csv")[0])
 
-    #math_regions = perform_nms(math_regions)
-    #math_regions = overlap_expand(math_regions)
+            x_offset = h[(patch_num-1) % len(h)]
+            y_offset = v[int((patch_num-1) / len(h))]
 
-    #math_regions = math_regions.tolist()
+            if data_arr is None:
+                continue
 
-    # This will give final math regions
+            # find scaling factors
+            final_width_ratio = crop_size/final_width
+            final_height_ratio = crop_size/final_height
 
-    #math_regions = voting_algo(math_regions, char_data, image, algorithm=algorithm, thresh_votes=thresh)
-    math_regions = char_algo(math_regions, char_data, image, algorithm=algorithm, thresh_votes=thresh)
+            data_arr[:, 0] = data_arr[:, 0] * final_width_ratio
+            data_arr[:, 2] = data_arr[:, 2] * final_width_ratio
+            data_arr[:, 1] = data_arr[:, 1] * final_height_ratio
+            data_arr[:, 3] = data_arr[:, 3] * final_height_ratio
+
+            data_arr[:, 0] = data_arr[:, 0] + x_offset * crop_size
+            data_arr[:, 2] = data_arr[:, 2] + x_offset * crop_size
+            data_arr[:, 1] = data_arr[:, 1] + y_offset * crop_size
+            data_arr[:, 3] = data_arr[:, 3] + y_offset * crop_size
+
+            data_arr[:, 0] = data_arr[:, 0] * intermediate_width_ratio
+            data_arr[:, 2] = data_arr[:, 2] * intermediate_width_ratio
+            data_arr[:, 1] = data_arr[:, 1] * intermediate_height_ratio
+            data_arr[:, 3] = data_arr[:, 3] * intermediate_height_ratio
+
+            # multiply score by 100. Because later we convert data_arr to int datatype
+            data_arr[:, 4] = data_arr[:, 4] * 100
+
+            annotations_map[filename] = data_arr
+
+        math_regions = np.array([])
+
+        for key in annotations_map:
+
+            if len(math_regions)==0:
+                math_regions = annotations_map[key][:,:]
+            else:
+                math_regions = np.concatenate((math_regions, annotations_map[key]), axis=0)
 
 
-    print(len(math_regions))
+        math_regions = math_regions.astype(int)
 
-    gt_regions = None
-    #gt_path = os.path.join(gt_dir, pdf_name, page_num + ".pmath")
-    #gt_regions = np.genfromtxt(gt_path, delimiter=',')
-    #gt_regions = gt_regions.astype(int)
+        # intital math regions
+        #math_regions_initial = np.copy(math_regions)
 
-    # if there is only one entry convert it to correct form required
-    #if len(gt_regions.shape) == 1:
-    #   gt_regions = gt_regions.reshape(1, -1)
+        math_regions = preprocess_math_regions(math_regions, image)
 
-    #gt_regions = gt_regions.tolist()
+        pp_math_file = open(os.path.join(os.path.dirname(os.path.dirname(math_files_list[0])), page_num + '.ppm'), 'w')
+        writer = csv.writer(pp_math_file, delimiter=",")
 
-    visualize.draw_all_boxes(image, processed_math_regions, math_regions, gt_regions, output_image)
-    print('saved ', output_image)
-    # visualize.draw_boxes_cv(image, math_regions, gt_regions, output_image)
-    # Following works only with 'none' stitching method
-    # Can't use any stitching method with this function
-    #visualize.draw_stitched_boxes(image, math_regions, output_image)
+        for math_region in math_regions:
+            writer.writerow(math_region)
+
+        processed_math_regions = np.copy(math_regions)
+
+        #math_regions = perform_nms(math_regions)
+        #math_regions = overlap_expand(math_regions)
+        #math_regions = math_regions.tolist()
+
+        # This will give final math regions
+        math_regions = voting_algo(math_regions, char_data, image, algorithm=algorithm, thresh_votes=thresh)
+
+        print('Number of math regions found ', len(math_regions))
+
+        gt_regions = None
+
+        if os.path.isfile(os.path.join(gt_dir, pdf_name, page_num + ".pmath")):
+            gt_path = os.path.join(gt_dir, pdf_name, page_num + ".pmath")
+
+            try:
+                gt_regions = np.genfromtxt(gt_path, delimiter=',')
+                gt_regions = gt_regions.astype(int)
+
+                #if there is only one entry convert it to correct form required
+                if len(gt_regions.shape) == 1:
+                   gt_regions = gt_regions.reshape(1, -1)
+
+                gt_regions = gt_regions.tolist()
+
+            except:
+                gt_regions = None
+
+        visualize.draw_all_boxes(image, processed_math_regions, math_regions, gt_regions, output_image)
+        print('saved ', output_image)
+        # visualize.draw_boxes_cv(image, math_regions, gt_regions, output_image)
+        # Following works only with 'none' stitching method
+        # Can't use any stitching method with this function
+        #visualize.draw_stitched_boxes(image, math_regions, output_image)
+    except:
+        print("Exception while processing ", pdf_name, " ", page_num, " ", sys.exc_info()[0])
 
     return math_regions
 
@@ -180,7 +192,7 @@ def preprocess_math_regions(math_regions, image):
         args.append((im_bw, box))
         #preprocessed_math_regions.append(box)
 
-    pool = Pool(processes=24)
+    pool = Pool(processes=32)
     preprocessed_math_regions = pool.map(adjust_box, args)
     pool.close()
     pool.join()
@@ -220,14 +232,19 @@ def voting_avg_score(votes, math_regions):
 
     return votes
 
-def voting_sum_score(votes, math_regions):
+def voting_sum_score(votes, boundary_scores, math_regions):
 
     # cast votes for the regions
     for box in math_regions:
         votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
             votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + box[4]
 
-    return votes
+        boundary_scores[int(box[1]), int(box[0]):int(box[2])] = \
+             boundary_scores[int(box[1]), int(box[0]):int(box[2])] + box[4]
+        boundary_scores[int(box[3]), int(box[0]):int(box[2])] = \
+             boundary_scores[int(box[3]), int(box[0]):int(box[2])] + box[4]
+
+    return votes, boundary_scores
 
 def voting_heuristic_score(votes, math_regions):
 
@@ -254,24 +271,25 @@ def vote_for_regions(math_regions, image, algorithm, thresh_votes):
     original_height = image.shape[0]
 
     votes = np.zeros(shape=(original_height, original_width))
+    boundary_scores = np.zeros(shape=(original_height, original_width))
 
     if algorithm == 'sum_score':
         thresh_votes = thresh_votes * 100
-        votes = voting_sum_score(votes, math_regions)
-    elif algorithm == 'max_score':
-        votes = voting_max_score(votes, math_regions)
-    elif algorithm == 'avg_score':
-        thresh_votes = thresh_votes * 100
-        votes = voting_avg_score(votes, math_regions)
-    else:  # algorithm='equal'
-        votes = voting_equal(votes, math_regions)
+        votes, boundary_scores = voting_sum_score(votes, boundary_scores, math_regions)
+    # elif algorithm == 'max_score':
+    #     votes = voting_max_score(votes, math_regions)
+    # elif algorithm == 'avg_score':
+    #     thresh_votes = thresh_votes * 100
+    #     votes = voting_avg_score(votes, math_regions)
+    # else:  # algorithm='equal'
+    #     votes = voting_equal(votes, math_regions)
 
     # find the regions with higher than the threshold votes
     # change all the values less than thresh_votes to 0
     votes[votes < thresh_votes] = 0
     votes[votes >= thresh_votes] = 1
 
-    return votes
+    return votes, boundary_scores
 
 def label_regions(math_regions, image):
     labeled = np.zeros(image.shape[:2])
@@ -285,6 +303,12 @@ def label_regions(math_regions, image):
 
     return labeled
 
+def area(box):
+
+    w = box[3] - box[1]
+    h = box[2] - box[0]
+
+    return w*h
 
 def char_algo(math_regions, char_data, image, algorithm='equal', thresh_votes=20):
 
@@ -292,20 +316,22 @@ def char_algo(math_regions, char_data, image, algorithm='equal', thresh_votes=20
         return []
 
     # vote for the regions
-    votes = vote_for_regions(math_regions, image, algorithm, thresh_votes)
+    votes, boundary_scores = vote_for_regions(math_regions, image, algorithm, thresh_votes)
 
     # Check if character is math or not
     char_data = char_data.tolist()
 
     for char_box in char_data:
-        if np.any(votes[int(char_box[1]):int(char_box[3]), int(char_box[0]):int(char_box[2])]):
+        #print('nz ', np.count_nonzero(votes[int(char_box[1]):int(char_box[3]), int(char_box[0]):int(char_box[2])]))
+
+        if np.count_nonzero(votes[int(char_box[1]):int(char_box[3]), int(char_box[0]):int(char_box[2])]) > 100:
             char_box.append(1) # APPEND 1 to indicate that it is a math character
         else:
             char_box.append(0)
 
     # TODO Find the regions
 
-    math_regions = []
+    boxes = []
 
     box = []
 
@@ -316,25 +342,37 @@ def char_algo(math_regions, char_data, image, algorithm='equal', thresh_votes=20
                 box = copy.deepcopy(char_box[:4])
                 continue
 
-            box[0] = min(char_box[0], box[0])  # left
-            box[1] = min(char_box[1], box[1])  # top
-            box[2] = max(char_box[2], box[2])  # left + width
-            box[3] = max(char_box[3], box[3])  # top + height
+            nbox = copy.deepcopy(box)
+            nbox[0] = min(char_box[0], box[0])  # left
+            nbox[1] = min(char_box[1], box[1])  # top
+            nbox[2] = max(char_box[2], box[2])  # left + width
+            nbox[3] = max(char_box[3], box[3])  # top + height
+
+            if area(nbox) > 4 * area(box):
+                boxes.append(box)
+                box = copy.deepcopy(char_box[:4])
+            else:
+                box = nbox
         else:
             if len(box) != 0:
-                math_regions.append(box)
+                boxes.append(box)
                 box = []
 
     if len(box) != 0:
-        math_regions.append(box)
+        boxes.append(box)
 
-    return math_regions
+    return boxes
 
 
 def voting_algo(math_regions, char_data, image, algorithm='equal', thresh_votes=20):
 
+    if algorithm == 'char_algo':
+        return char_algo(math_regions, char_data, image, algorithm, thresh_votes)
+
     # vote for the regions
-    votes = vote_for_regions(math_regions, image, algorithm, thresh_votes)
+    votes, boundary_scores = vote_for_regions(math_regions, image, algorithm, thresh_votes)
+
+    cv2.imwrite('boundary_scores.png', boundary_scores)
     #math_region_labels = label_regions(math_regions, image)
 
     votes_regions = np.copy(votes)
@@ -345,14 +383,14 @@ def voting_algo(math_regions, char_data, image, algorithm='equal', thresh_votes=
     # use that info separate lines
     # so, that math regions on different lines do not get merged
     # This allows for horizontal merging, but skips vertical merging
-    #
 
     #blank_rows = find_blank_rows(image, 0)
+    #votes[rows_with_zero_black_pixels(image)] = 0
 
     # for blank rows, zero votes
-    #for box in blank_rows:
+    # for box in blank_rows:
     #    votes_regions[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = 0
-
+    #    image[int(box[1]):int(box[3]), int(box[0]):int(box[2])]=0
     # blank_rows = find_blank_rows_h(image)
     #
     # # for blank rows, zero votes
@@ -360,6 +398,7 @@ def voting_algo(math_regions, char_data, image, algorithm='equal', thresh_votes=
     #     votes_regions[row] = 0
     #     #image[row] = 0
 
+    #votes[boundary_scores>50] = 0
     #cv2.imwrite('/home/psm2208/test.png', image)
 
     # this defines the connection filter
@@ -376,11 +415,9 @@ def voting_algo(math_regions, char_data, image, algorithm='equal', thresh_votes=
     #         #cv2.drawContours(image, [cnt], 0, 255, -1)
     #         x, y, w, h = cv2.boundingRect(cnt)
     #         votes[y:y+h, x:x+w] = votes_regions[y:y+h, x:x+w]
-
-    # cv2.imwrite("test.png", image)
+    cv2.imwrite("test.png", image)
 
     im_bw = convert_to_binary(image)
-
 
     structure = np.ones((3, 3), dtype=np.int)
 
@@ -437,8 +474,8 @@ def voting_algo(math_regions, char_data, image, algorithm='equal', thresh_votes=
 
 def adjust_box(args):
     im_bw, box = args
-    box = expand(im_bw, box)
     box = contract(im_bw, box)
+    box = expand(im_bw, box)
     return box
 
 def contract(im_bw, box):
@@ -581,8 +618,13 @@ def is_blank(cum_sum, current, n=30, thresh=3000):
 
     return ret
 
+def rows_with_zero_black_pixels(image):
 
-def find_blank_rows(image, line_spacing=15):
+    im_bw = convert_to_binary(image) # characters are black
+    return np.where(~im_bw.any(axis=1))[0]
+
+
+def find_blank_rows(image, line_spacing=1):
 
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     blank_rows = np.all(gray_image == 255, axis=1)
@@ -732,8 +774,8 @@ def stitch_patches(args):
 
     for key in sorted(annotations_map[pdf_name]):
 
-        if key not in char_annotations_map:
-            char_annotations_map[key] = ""
+        if key not in char_annotations_map[pdf_name]:
+            char_annotations_map[pdf_name][key] = ""
 
         # basically it is called for each page in the pdf
         math_regions = combine_math_regions(
@@ -770,13 +812,13 @@ def patch_stitch(filename, annotations_dir, output_dir, image_dir='/home/psm2208
 
     training_pdf_names.close()
 
-    #for args in training_pdf_names_list:
-    #    stitch_patches(args)
+    for args in training_pdf_names_list:
+       stitch_patches(args)
 
-    pool = Pool(processes=8)
-    pool.map(stitch_patches, training_pdf_names_list)
-    pool.close()
-    pool.join()
+    # pool = Pool(processes=8)
+    # pool.map(stitch_patches, training_pdf_names_list)
+    # pool.close()
+    # pool.join()
 
 
 if __name__ == '__main__':
