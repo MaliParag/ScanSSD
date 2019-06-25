@@ -15,7 +15,6 @@ from scipy.ndimage.measurements import label
 import scipy.ndimage as ndimage
 import copy
 
-
 # Default parameters for thr GTDB dataset
 intermediate_width = 4800
 intermediate_height = 6000
@@ -233,19 +232,29 @@ def voting_avg_score(votes, math_regions):
 
     return votes
 
-def voting_sum_score(votes, boundary_scores, math_regions):
+def voting_sum_score(votes, math_regions):
 
     # cast votes for the regions
     for box in math_regions:
         votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
             votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + box[4]
 
-        boundary_scores[int(box[1]), int(box[0]):int(box[2])] = \
-             boundary_scores[int(box[1]), int(box[0]):int(box[2])] + box[4]
-        boundary_scores[int(box[3]), int(box[0]):int(box[2])] = \
-             boundary_scores[int(box[3]), int(box[0]):int(box[2])] + box[4]
+    return votes
 
-    return votes, boundary_scores
+
+# def voting_sum_score(votes, boundary_scores, math_regions):
+#
+#     # cast votes for the regions
+#     for box in math_regions:
+#         votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
+#             votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + box[4]
+#
+#         boundary_scores[int(box[1]), int(box[0]):int(box[2])] = \
+#              boundary_scores[int(box[1]), int(box[0]):int(box[2])] + box[4]
+#         boundary_scores[int(box[3]), int(box[0]):int(box[2])] = \
+#              boundary_scores[int(box[3]), int(box[0]):int(box[2])] + box[4]
+#
+#     return votes, boundary_scores
 
 def voting_heuristic_score(votes, math_regions):
 
@@ -272,18 +281,18 @@ def vote_for_regions(math_regions, image, algorithm, thresh_votes):
     original_height = image.shape[0]
 
     votes = np.zeros(shape=(original_height, original_width))
-    boundary_scores = np.zeros(shape=(original_height, original_width))
+    #boundary_scores = np.zeros(shape=(original_height, original_width))
 
     if algorithm == 'sum_score':
         thresh_votes = thresh_votes * 100
-        votes, boundary_scores = voting_sum_score(votes, boundary_scores, math_regions)
-    # elif algorithm == 'max_score':
-    #     votes = voting_max_score(votes, math_regions)
-    # elif algorithm == 'avg_score':
-    #     thresh_votes = thresh_votes * 100
-    #     votes = voting_avg_score(votes, math_regions)
-    # else:  # algorithm='equal'
-    #     votes = voting_equal(votes, math_regions)
+        votes = voting_sum_score(votes, math_regions)
+    elif algorithm == 'max_score':
+        votes = voting_max_score(votes, math_regions)
+    elif algorithm == 'avg_score':
+        thresh_votes = thresh_votes * 100
+        votes = voting_avg_score(votes, math_regions)
+    else:  # algorithm='equal'
+        votes = voting_equal(votes, math_regions)
 
     #cv2.imwrite('/home/psm2208/votes.png', votes*255/np.max(votes))
 
@@ -294,7 +303,7 @@ def vote_for_regions(math_regions, image, algorithm, thresh_votes):
 
     #cv2.imwrite('/home/psm2208/votes_bw.png', votes*255)
 
-    return votes, boundary_scores
+    return votes
 
 def label_regions(math_regions, image):
     labeled = np.zeros(image.shape[:2])
@@ -321,7 +330,7 @@ def char_algo(math_regions, char_data, image, algorithm='equal', thresh_votes=20
         return []
 
     # vote for the regions
-    votes, boundary_scores = vote_for_regions(math_regions, image, algorithm, thresh_votes)
+    votes = vote_for_regions(math_regions, image, algorithm, thresh_votes)
 
     # Check if character is math or not
     char_data = char_data.tolist()
@@ -375,7 +384,7 @@ def voting_algo(math_regions, char_data, image, algorithm='equal', thresh_votes=
         return char_algo(math_regions, char_data, image, algorithm, thresh_votes)
 
     # vote for the regions
-    votes, boundary_scores = vote_for_regions(math_regions, image, algorithm, thresh_votes)
+    votes = vote_for_regions(math_regions, image, algorithm, thresh_votes)
 
     #cv2.imwrite('boundary_scores.png', boundary_scores)
     #math_region_labels = label_regions(math_regions, image)
@@ -390,7 +399,7 @@ def voting_algo(math_regions, char_data, image, algorithm='equal', thresh_votes=
     # This allows for horizontal merging, but skips vertical merging
 
     #blank_rows = find_blank_rows(image, 0)
-    #votes[rows_with_zero_black_pixels(image)] = 0
+    votes[rows_with_zero_black_pixels(image)] = 0
 
     # for blank rows, zero votes
     # for box in blank_rows:
