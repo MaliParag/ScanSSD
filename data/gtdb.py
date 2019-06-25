@@ -136,6 +136,7 @@ class GTDBDetection(data.Dataset):
         target = self.read_annotations(self._annopath % img_id)
 
         img = self.read_image(img_id)
+
         height, width, channels = img.shape
 
         if self.target_transform is not None:

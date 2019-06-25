@@ -13,9 +13,9 @@ from multiprocessing import Pool
 # Default parameters for thr GTDB dataset
 intermediate_width = 4800
 intermediate_height = 6000
-crop_size = 1800
-final_width = 512
-final_height = 512
+crop_size = 1200
+final_width = 0
+final_height = 0
 stride = 0.1
 
 n_horizontal = int(intermediate_width / crop_size)  # 4
@@ -52,6 +52,7 @@ def generate_subimages(pdf_name ='Alford94'):
             idx = int(box[0]) + 1
             box = box[1:]
 
+            box = list(map(float, box))
             box = list(map(int, box))
 
             if idx not in boxes:
@@ -79,7 +80,6 @@ def generate_subimages(pdf_name ='Alford94'):
 
     for image_filepath in image_filelist:
 
-        #os.path.basename
         image = cv2.imread(os.path.join(image_dir, pdf_name, image_filepath))
         basename = os.path.basename(image_filepath)
         page_id = int(os.path.splitext(basename)[0])
@@ -290,8 +290,12 @@ if __name__ == '__main__':
 
     suffix = sys.argv[3] #str(int(100 * stride))
 
+    final_height = int(suffix)
+    final_width = int(suffix)
+
     char_dir = '/home/psm2208/data/GTDB/char_annotations/'
-    math_dir = '/home/psm2208/data/GTDB/annotations/'
+    math_dir = '/home/psm2208/code/eval/relations_adjust/'
+    #math_dir = '/home/psm2208/data/GTDB/annotations/'
     image_dir = '/home/psm2208/data/GTDB/images/'
 
     output_image_dir = '/home/psm2208/data/GTDB/processed_images_' + suffix
@@ -308,7 +312,7 @@ if __name__ == '__main__':
     if not os.path.exists(output_char_dir):
         os.makedirs(output_char_dir)
 
-    pool = Pool(processes=24)
+    pool = Pool(processes=32)
     pool.map(generate_subimages, training_pdf_names_list)
     pool.close()
     pool.join()

@@ -4,12 +4,14 @@ import sys
 import os
 from multiprocessing import Pool
 import csv
+import cv2
 
 def split(args):
 
     gt_dir, pdf_name, out_dir, ext = args
 
     file_path = os.path.join(gt_dir, pdf_name + "." + ext)
+    img_dir = '/home/psm2208/data/GTDB/images/'
 
     # create a map of page to list of math boxes
     map = {}
@@ -30,12 +32,26 @@ def split(args):
 
             boxes = map[key]
 
+            img_file = os.path.join(img_dir, pdf_name, str(int(key) + 1) + ".png")
+            img = cv2.imread(img_file)
+
+            height, width, channels = img.shape
+
+            width_ratio = 512 / width
+            height_ratio = 512 / height
+
             # create processed math file
             file_op = open(os.path.join(out_dir, pdf_name, str(int(key) + 1)) + ".p" + ext, "w")
 
             for box in boxes:
                 # xmin, ymin, xmax, ymax
-                file_op.write(box[0] + "," + box[1] + "," + box[2] + "," + box[3] + "\n")
+
+                box[0] = float(box[0]) * width_ratio
+                box[1] = float(box[1]) * height_ratio
+                box[2] = float(box[2]) * width_ratio
+                box[3] = float(box[3]) * height_ratio
+
+                file_op.write(','.join(str(e) for e in box) + "\n")
 
             file_op.close()
             file_ip.close()
@@ -81,7 +97,7 @@ def test():
 
     pdf_names.close()
 
-    pool = Pool(processes=1)
+    pool = Pool(processes=32)
     pool.map(split, pdf_names_list)
     pool.close()
     pool.join()

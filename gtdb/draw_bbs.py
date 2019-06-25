@@ -55,6 +55,8 @@ def draw_bb(args):
         final_image[:, :, 2] = boundary_confs # Red
 
         cv2.imwrite(output_file, final_image)
+
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
         print('Saved ', output_file)
 
     except:
@@ -62,8 +64,6 @@ def draw_bb(args):
 
 def draw_math_bb(filename, ppm_dir, image_dir, char_dir, output_dir):
 
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
 
     pages_list = []
     pdf_names = open(filename, 'r')
@@ -106,9 +106,9 @@ if __name__ == "__main__":
     home_images = "/home/psm2208/data/GTDB/images/"
     home_anno = "/home/psm2208/data/GTDB/annotations/"
     home_char = "/home/psm2208/data/GTDB/char_annotations/"
-    output_dir = "/home/psm2208/code/eval/relations_test_adjust/"
+    output_dir = "/home/psm2208/data/GTDB/processed_images_stage_2/"
     ppm_dir = "/home/psm2208/code/eval/Test3_Focal_10_25/" # post-processed math after detection
 
     type = sys.argv[1]
 
-    draw_math_bb(home_data + type, ppm_dir, home_images, home_char, ppm_dir)
+    draw_math_bb(home_data + type, ppm_dir, home_images, home_char, output_dir)

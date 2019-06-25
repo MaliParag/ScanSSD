@@ -20,8 +20,9 @@ import copy
 intermediate_width = 4800
 intermediate_height = 6000
 crop_size = 1200
-final_width = 300
-final_height = 300 # because initial image size is 300 * 300 even for 512 * 512 network
+
+final_width = -1
+final_height = -1 # because initial image size is 300 * 300 even for 512 * 512 network
 
 stride = 0.1
 
@@ -134,13 +135,13 @@ def combine_math_regions(pdf_name, page_num, math_files_list, char_filepath, ima
         # intital math regions
         #math_regions_initial = np.copy(math_regions)
 
-        math_regions = preprocess_math_regions(math_regions, image)
+        #TODO math_regions = preprocess_math_regions(math_regions, image)
 
-        pp_math_file = open(os.path.join(os.path.dirname(os.path.dirname(math_files_list[0])), page_num + '.ppm'), 'w')
-        writer = csv.writer(pp_math_file, delimiter=",")
+        #TODO pp_math_file = open(os.path.join(os.path.dirname(os.path.dirname(math_files_list[0])), page_num + '.ppm'), 'w')
+        #TODO writer = csv.writer(pp_math_file, delimiter=",")
 
-        for math_region in math_regions:
-            writer.writerow(math_region)
+        #TODO for math_region in math_regions:
+        #    writer.writerow(math_region)
 
         processed_math_regions = np.copy(math_regions)
 
@@ -284,10 +285,14 @@ def vote_for_regions(math_regions, image, algorithm, thresh_votes):
     # else:  # algorithm='equal'
     #     votes = voting_equal(votes, math_regions)
 
+    #cv2.imwrite('/home/psm2208/votes.png', votes*255/np.max(votes))
+
     # find the regions with higher than the threshold votes
     # change all the values less than thresh_votes to 0
     votes[votes < thresh_votes] = 0
     votes[votes >= thresh_votes] = 1
+
+    #cv2.imwrite('/home/psm2208/votes_bw.png', votes*255)
 
     return votes, boundary_scores
 
@@ -372,7 +377,7 @@ def voting_algo(math_regions, char_data, image, algorithm='equal', thresh_votes=
     # vote for the regions
     votes, boundary_scores = vote_for_regions(math_regions, image, algorithm, thresh_votes)
 
-    cv2.imwrite('boundary_scores.png', boundary_scores)
+    #cv2.imwrite('boundary_scores.png', boundary_scores)
     #math_region_labels = label_regions(math_regions, image)
 
     votes_regions = np.copy(votes)
@@ -415,7 +420,7 @@ def voting_algo(math_regions, char_data, image, algorithm='equal', thresh_votes=
     #         #cv2.drawContours(image, [cnt], 0, 255, -1)
     #         x, y, w, h = cv2.boundingRect(cnt)
     #         votes[y:y+h, x:x+w] = votes_regions[y:y+h, x:x+w]
-    cv2.imwrite("test.png", image)
+    #cv2.imwrite("test.png", image)
 
     im_bw = convert_to_binary(image)
 
@@ -777,6 +782,7 @@ def stitch_patches(args):
         if key not in char_annotations_map[pdf_name]:
             char_annotations_map[pdf_name][key] = ""
 
+
         # basically it is called for each page in the pdf
         math_regions = combine_math_regions(
                         pdf_name,
@@ -812,13 +818,13 @@ def patch_stitch(filename, annotations_dir, output_dir, image_dir='/home/psm2208
 
     training_pdf_names.close()
 
-    for args in training_pdf_names_list:
-       stitch_patches(args)
+    #for args in training_pdf_names_list:
+    #   stitch_patches(args)
 
-    # pool = Pool(processes=8)
-    # pool.map(stitch_patches, training_pdf_names_list)
-    # pool.close()
-    # pool.join()
+    pool = Pool(processes=24)
+    pool.map(stitch_patches, training_pdf_names_list)
+    pool.close()
+    pool.join()
 
 
 if __name__ == '__main__':
@@ -840,6 +846,9 @@ if __name__ == '__main__':
     algorithm = sys.argv[2] # equal
     type = sys.argv[3]  # train_pdf
     dir_to_eval = sys.argv[4] # Test3_Focal_10_25
+
+    final_width = 300
+    final_height = 300
 
     home_data = "/home/psm2208/data/GTDB/"
     home_eval = "/home/psm2208/code/eval/"
