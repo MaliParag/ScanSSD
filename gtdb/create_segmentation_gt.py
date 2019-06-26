@@ -12,207 +12,78 @@ from cv2.dnn import NMSBoxes
 from scipy.ndimage.measurements import label
 import scipy.ndimage as ndimage
 import copy
+import shutil
+import math
+from gtdb import feature_extractor
+
+def intersects(first, other):
+    return not (first[2] < other[0] or
+                first[0] > other[2] or
+                first[1] > other[3] or
+                first[3] < other[1])
 
 
-def find_math(args):
+def create_gt(args):
 
     try:
-        pdf_name, image_file, char_file, page_num, output_file = args
+        output_dir, pdf_name, page_num, gt_page_math, det_page_math = args
 
-        char_info = {}
-        char_map = {}
+        inside_gt_dict = {}
 
-        image = cv2.imread(image_file)
+        # for each det i, find the gt with which it intersects
+        for i, det in enumerate(det_page_math):
 
-        with open(char_file) as csvfile:
-            char_reader = csv.reader(csvfile, delimiter=',')
-            for row in char_reader:
-                char_info[row[1]] = row[2:]
+            inside_gt_dict[i] = set()
 
-                if row[-3] != 'NONE':
-                    if row[1] not in char_map:
-                        char_map[row[1]] = set()
+            for j, gt in enumerate(gt_page_math):
+                if intersects(det, gt):
+                    inside_gt_dict[i].add(j)
 
-                    char_map[row[1]].add(row[-2])
+        segmentation_gt = []
 
-                    if row[-2] not in char_map:
-                        char_map[row[-2]] = set()
+        for i, det_math1 in enumerate(det_page_math):
 
-                    char_map[row[-2]].add(row[1])
+            x1 = det_math1[0] + (det_math1[2] - det_math1[0] / 2)
+            y1 = det_math1[1] + (det_math1[3] - det_math1[1] / 2)
 
-                elif row[-4] == 'MATH_SYMBOL':
-                    if row[1] not in char_map:
-                        char_map[row[1]] = set()
+            min = float('inf')
+            min_idx = -1
 
-        math_regions_chars = group_math(char_map)
-        math_regions = create_bb(math_regions_chars, char_info)
+            for j, det_math in enumerate(det_page_math):
+                if i != j:
+                    x2 = det_math[0] + (det_math[2] - det_math[0] / 2)
+                    y2 = det_math[1] + (det_math[3] - det_math[1] / 2)
 
-        os.makedirs(os.path.dirname(output_file), exist_ok=True)
+                    c_dist = (y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1)
+
+                    if c_dist < min:
+                        min = c_dist
+                        min_idx = j
+
+            if len(inside_gt_dict[i].intersection(inside_gt_dict[min_idx])) > 0:
+                # positive example
+                segmentation_gt.append(
+                    feature_extractor.extract_features(det_page_math[i], det_page_math[min_idx], 1))
+            else:
+                #negative example
+                segmentation_gt.append(
+                    feature_extractor.extract_features(det_page_math[i], det_page_math[min_idx], 0))
+
+        output_file = os.path.join(output_dir, "gt.csv")
         writer = csv.writer(open(output_file,"a"), delimiter=",")
 
-        math_regions = adjust_all(image, math_regions)
+        for gt_row in segmentation_gt:
+            writer.writerow(gt_row)
 
-        for math_region in math_regions:
-            math_region.insert(0, int(page_num) - 1)
-            writer.writerow(math_region)
-
-        print("Saved ", output_file, " > ", page_num)
+        print('Processed ', pdf_name, ' ', page_num)
     except:
         print("Exception while processing ", pdf_name, " ", page_num, " ", sys.exc_info()[0])
 
 
-def create_bb(math_regions_chars, char_info):
+def create_gt_segmentation(filename, gt_math_dir, det_math_dir, output_dir):
 
-    math_regions = []
-
-    for region in math_regions_chars:
-        box = []
-
-        for char_id in region:
-
-            if len(box) == 0:
-                box = [float(char_info[char_id][0]),float(char_info[char_id][1]),
-                       float(char_info[char_id][2]), float(char_info[char_id][3])]
-            else:
-                box[0] = min(float(char_info[char_id][0]), box[0])  # left
-                box[1] = min(float(char_info[char_id][1]), box[1])  # top
-                box[2] = max(float(char_info[char_id][2]), box[2])  # left + width
-                box[3] = max(float(char_info[char_id][3]), box[3])  # top + height
-
-        math_regions.append(box)
-
-    return math_regions
-
-def group_math(char_map):
-
-    visited = set()
-    regions = []
-
-    for key in char_map:
-        if key not in visited:
-            region = dfs(char_map, key)
-            regions.append(region)
-
-            for k in region:
-                visited.add(k)
-
-    return regions
-
-
-def dfs(graph, start):
-    visited, stack = set(), [start]
-    while stack:
-        vertex = stack.pop()
-        if vertex not in visited:
-            visited.add(vertex)
-            stack.extend(graph[vertex] - visited)
-    return visited
-
-
-def adjust_box(args):
-    im_bw, box = args
-    box = contract(im_bw, box)
-    box = expand(im_bw, box)
-    return box
-
-def contract(im_bw, box):
-
-    # find first row with one pixel
-    rows_with_pixels = np.any(im_bw[box[1]:box[3], box[0]:box[2]], axis=1)
-    cols_with_pixels = np.any(im_bw[box[1]:box[3], box[0]:box[2]], axis=0)
-
-    if len(rows_with_pixels==True) == 0 or len(cols_with_pixels==True) == 0:
-        box = [0,0,0,0,0]
-        return box
-
-    left = box[0] + np.argmax(cols_with_pixels==True)
-    top = box[1] + np.argmax(rows_with_pixels==True)
-    right = box[0] + len(cols_with_pixels) - np.argmax(cols_with_pixels[::-1]==True) - 1
-    bottom = box[1] + len(rows_with_pixels) - np.argmax(rows_with_pixels[::-1]==True) - 1
-
-    box[0] = left
-    box[1] = top
-    box[2] = right
-    box[3] = bottom
-
-    return box
-
-    # find first column with one pixel
-    # find last row with one pixel
-    # find last col with pixel
-
-def expand(im_bw, box):
-
-    im_copy = np.copy(im_bw)
-    im_copy[box[1]:box[3], box[0]:box[2]] = 1
-
-    start = (box[1], box[0])
-    queue = [start]
-    visited = set()
-
-    while len(queue) != 0:
-        front = queue.pop(0)
-        if front not in visited:
-            for adjacent_space in get_adjacent_spaces(im_copy, front, visited):
-                queue.append(adjacent_space)
-
-            box[0] = min(front[1], box[0]) #left
-            box[1] = min(front[0], box[1]) #top
-            box[2] = max(front[1], box[2])  # left + width
-            box[3] = max(front[0], box[3])  # top + height
-
-            visited.add(front)
-
-    return box
-
-def get_adjacent_spaces(im_bw, space, visited):
-
-    spaces = list()
-    dirs = [[1,0],[-1,0],[0,1],[0,-1]]
-
-    for dir in dirs:
-        r = space[0] + dir[0]
-        c = space[1] + dir[1]
-
-        if r < im_bw.shape[0] and c < im_bw.shape[1] and r >= 0 and c >= 0:
-            spaces.append((r, c))
-
-    final = list()
-    for i in spaces:
-        if im_bw[i[0]][i[1]] == 1 and i not in visited:
-            final.append(i)
-
-    return final
-
-def convert_to_binary(image):
-
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    im_bw = np.zeros(gray_image.shape)
-    im_bw[gray_image > 127] = 0
-    im_bw[gray_image <= 127] = 1
-
-    return im_bw
-
-def adjust_all(image, boxes):
-
-    im_bw = convert_to_binary(image)
-    adjusted = []
-
-    for box in boxes:
-        box = [int(box[0]), int(box[1]), int(box[2]), int(box[3])]
-        box = adjust_box((im_bw, box))
-        adjusted.append(box)
-
-    return adjusted
-
-def adjust_box(args):
-    im_bw, box = args
-    box = contract(im_bw, box)
-    box = expand(im_bw, box)
-    return box
-
-def create_gt_segmentation(filename, image_dir, char_dir, output_dir="/home/psm2208/data/GTDB/annotationsV2/"):
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
 
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
@@ -221,35 +92,35 @@ def create_gt_segmentation(filename, image_dir, char_dir, output_dir="/home/psm2
     pdf_names = open(filename, 'r')
 
     for pdf_name in pdf_names:
+        print('Processing-1', pdf_name)
         pdf_name = pdf_name.strip()
 
         if pdf_name != '':
+            gt_math_file = os.path.join(gt_math_dir, pdf_name + ".csv")
+            gt_math_regions = np.genfromtxt(gt_math_file, delimiter=',', dtype=int)
 
-            for root, dirs, files in os.walk(os.path.join(char_dir, pdf_name)):
-                for name in files:
-                    if name.endswith(".pchar"):
+            det_math_file = os.path.join(det_math_dir, pdf_name + ".csv")
+            det_math_regions = np.genfromtxt(det_math_file, delimiter=',', dtype=int)
 
-                        page_num = os.path.splitext(name)[0]
+            pages = np.unique(gt_math_regions[:, 0])
 
-                        pages_list.append((pdf_name,
-                                           os.path.join(image_dir,
-                                                        pdf_name,
-                                                        page_num + ".png"),
-                                           os.path.join(root, name),
-                                           int(page_num),
-                                           os.path.join(output_dir,
-                                                        pdf_name + ".csv")))
-                                                        #page_num + ".pmath")))
+            for page_num in pages:
+
+                gt_page_math = gt_math_regions[np.where(gt_math_regions[:,0]==page_num)]
+                gt_page_math = gt_page_math[:,1:]
+
+                det_page_math = det_math_regions[np.where(det_math_regions[:, 0] == page_num)]
+                det_page_math = det_page_math[:, 1:]
+
+                pages_list.append([output_dir, pdf_name, page_num, gt_page_math, det_page_math])
 
     pdf_names.close()
 
-    #for args in pages_list:
-    #   find_math(args)
-
-    pool = Pool(processes=32)
-    pool.map(find_math, pages_list)
+    pool = Pool(processes=1)
+    pool.map(create_gt, pages_list)
     pool.close()
     pool.join()
+
 
 if __name__ == "__main__":
     home_data = "/home/psm2208/data/GTDB/"
@@ -257,8 +128,13 @@ if __name__ == "__main__":
     home_images = "/home/psm2208/data/GTDB/images/"
     home_anno = "/home/psm2208/data/GTDB/annotations/"
     home_char = "/home/psm2208/data/GTDB/char_annotations/"
-    output_dir = "/home/psm2208/code/eval/relations_train_adjust/"
+
+    output_dir = "/home/psm2208/code/eval/segmentation_gt/"
+    gt_math = "/home/psm2208/Workspace/Task3_Detection/Train/GT_math_csv/"
+
+    det_math = "/home/psm2208/code/eval/Train3_Focal_10_25/equal_30.0"
 
     type = sys.argv[1]
 
-    create_gt_segmentation(home_data + type, home_images, home_char, output_dir)
+    #filename, gt_math_dir, det_math_dir, output_dir
+    create_gt_segmentation(home_data + type, gt_math, det_math, output_dir)

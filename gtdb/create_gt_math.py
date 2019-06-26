@@ -11,7 +11,6 @@ from scipy.ndimage.measurements import label
 import scipy.ndimage as ndimage
 import copy
 
-
 def find_math(args):
 
     try:
@@ -238,7 +237,6 @@ def create_gt_math(filename, image_dir, char_dir, output_dir="/home/psm2208/data
                                            os.path.join(output_dir,
                                                         pdf_name + ".csv")))
                                                         #page_num + ".pmath")))
-
     pdf_names.close()
 
     #for args in pages_list:
