@@ -29,30 +29,52 @@ def draw_bb(args):
         height, width, channels = image.shape
         final_image = np.zeros([512,512,3])
 
-        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        gray_image = cv2.resize(gray_image,(final_width,final_height),interpolation=cv2.INTER_AREA)
+        #gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        #gray_image = cv2.resize(gray_image,(final_width,final_height),interpolation=cv2.INTER_AREA)
 
-        final_image[:, :, 0] = gray_image # Blue
+        #final_image[:, :, 0] = gray_image # Blue
 
-        width_ratio = final_width / width
-        height_ratio = final_height / height
+        #width_ratio = final_width / width
+        #height_ratio = final_height / height
 
-        boundary_scores = np.zeros([final_width, final_height])
-        boundary_confs = np.zeros([final_width, final_height])
+        boundary_scores = np.zeros([height, width])
+        #boundary_confs = np.zeros([final_width, final_height])
+
+        k = 15
+        vote_weight = 5
 
         # sort
         if len(math_regions) > 4:
             math_regions = math_regions[math_regions[:, 4].argsort()]
 
             for box in math_regions:
-                box = [box[0]*width_ratio, box[1]*height_ratio, box[2]*width_ratio, box[3]*height_ratio, box[4]]
-                boundary_scores[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
-                    boundary_scores[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + 1
-                boundary_confs[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = box[4] * 2.55 #(255 / 100)
+                # box = [box[0]*width_ratio, box[1]*height_ratio, box[2]*width_ratio, box[3]*height_ratio, box[4]]
+                # boundary_scores[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
+                #     boundary_scores[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + 1
+                # boundary_confs[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = box[4] * 2.55 #(255 / 100)
+                boundary_scores[int(box[1]) - k : int(box[1]), int(box[0]):int(box[2])] = \
+                    boundary_scores[int(box[1]) - k : int(box[1]), int(box[0]):int(box[2])] + vote_weight
 
+                boundary_scores[int(box[3]): int(box[3]) + k, int(box[0]):int(box[2])] = \
+                    boundary_scores[int(box[3]): int(box[3]) + k, int(box[0]):int(box[2])] + vote_weight
 
-        final_image[:, :, 1] = boundary_scores # Green
-        final_image[:, :, 2] = boundary_confs # Red
+                #boundary_confs[int(box[1]), int(box[0]):int(box[2])] = box[4] * 2.55  # (255 / 100)
+                #boundary_confs[int(box[3]), int(box[0]):int(box[2])] = box[4] * 2.55
+                image[int(box[1]) - k: int(box[1]), int(box[0]):int(box[2])] = 0
+                image[int(box[3]): int(box[3]) + k, int(box[0]):int(box[2])] = 0
+
+        #cv2.imwrite("/home/psm2208/test.png", image)
+
+        image[:, :, 0] = image[:, :, 0] - boundary_scores
+        image[:, :, 1] = image[:, :, 1] - boundary_scores
+        image[:, :, 2] = image[:, :, 2] - boundary_scores
+
+        #cv2.imwrite("/home/psm2208/test2.png", image)
+        #cv2.imwrite("/home/psm2208/test3.png", cv2.resize(image, (512, 512), interpolation=cv2.INTER_AREA))
+
+        final_image = image
+        #final_image[:, :, 1] = boundary_scores # Green
+        #final_image[:, :, 2] = boundary_confs # Red
 
         cv2.imwrite(output_file, final_image)
 
@@ -63,7 +85,6 @@ def draw_bb(args):
         print('Error occurred while processing ', output_file,  sys.exc_info())
 
 def draw_math_bb(filename, ppm_dir, image_dir, char_dir, output_dir):
-
 
     pages_list = []
     pdf_names = open(filename, 'r')
@@ -94,7 +115,6 @@ def draw_math_bb(filename, ppm_dir, image_dir, char_dir, output_dir):
 
     pdf_names.close()
 
-
     pool = Pool(processes=24)
     pool.map(draw_bb, pages_list)
     pool.close()
@@ -107,7 +127,9 @@ if __name__ == "__main__":
     home_anno = "/home/psm2208/data/GTDB/annotations/"
     home_char = "/home/psm2208/data/GTDB/char_annotations/"
     output_dir = "/home/psm2208/data/GTDB/processed_images_stage_2/"
-    ppm_dir = "/home/psm2208/code/eval/Test3_Focal_10_25/" # post-processed math after detection
+    #ppm_dir = "/home/psm2208/code/eval/Train3_Focal_10_25/" # post-processed math after detection
+
+    ppm_dir = "/home/psm2208/code/eval/Test3_Focal_10_25/"  # post-processed math after detection
 
     type = sys.argv[1]
 

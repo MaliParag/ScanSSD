@@ -24,9 +24,11 @@ def intersects(first, other):
 
 
 def create_gt(args):
+    count = 0
 
     try:
         output_dir, pdf_name, page_num, gt_page_math, det_page_math = args
+
 
         inside_gt_dict = {}
 
@@ -39,22 +41,36 @@ def create_gt(args):
                 if intersects(det, gt):
                     inside_gt_dict[i].add(j)
 
+        check_dict = {}
+        for i, gt in enumerate(gt_page_math):
+
+            check_dict[i] = set()
+
+            for j, det in enumerate(det_page_math):
+                if check_inside(det, gt):
+                    check_dict[i].add(j)
+
+        for key in check_dict:
+            if len(check_dict[key]) > 1:
+                count = count + 1
+
         segmentation_gt = []
 
         for i, det_math1 in enumerate(det_page_math):
 
-            x1 = det_math1[0] + (det_math1[2] - det_math1[0] / 2)
-            y1 = det_math1[1] + (det_math1[3] - det_math1[1] / 2)
-
             min = float('inf')
             min_idx = -1
 
+            x1 = det_math1[0] + ((det_math1[2] - det_math1[0]) / 2)
+            y1 = det_math1[1] + ((det_math1[3] - det_math1[1]) / 2)
+
             for j, det_math in enumerate(det_page_math):
                 if i != j:
-                    x2 = det_math[0] + (det_math[2] - det_math[0] / 2)
-                    y2 = det_math[1] + (det_math[3] - det_math[1] / 2)
 
-                    c_dist = (y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1)
+                    x2 = det_math[0] + ((det_math[2] - det_math[0]) / 2)
+                    y2 = det_math[1] + ((det_math[3] - det_math[1]) / 2)
+
+                    c_dist = np.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1))#feature_extractor.vertical_dist_bb(det_page_math[i], det_page_math[j])
 
                     if c_dist < min:
                         min = c_dist
@@ -76,9 +92,11 @@ def create_gt(args):
             writer.writerow(gt_row)
 
         print('Processed ', pdf_name, ' ', page_num)
-    except:
-        print("Exception while processing ", pdf_name, " ", page_num, " ", sys.exc_info()[0])
 
+    except:
+        print("Exception while processing ", pdf_name, " ", page_num, " ", sys.exc_info())
+
+    return count
 
 def create_gt_segmentation(filename, gt_math_dir, det_math_dir, output_dir):
 
@@ -117,10 +135,28 @@ def create_gt_segmentation(filename, gt_math_dir, det_math_dir, output_dir):
     pdf_names.close()
 
     pool = Pool(processes=1)
-    pool.map(create_gt, pages_list)
+    result = pool.map(create_gt, pages_list)
     pool.close()
     pool.join()
+    print('Merged regions', np.sum(result))
 
+
+def check_inside(rectA, rectB):
+
+    # returns True if A is inside B
+    #left, top, right, bottom
+    #If any of the sides from A are outside of B
+    if rectA[3] < rectB[1]: # if bottom of rectA is less than top of rectB
+        return False
+    if rectA[1] > rectB[3]: # if top of rectA is greater than bottom of rectB
+        return False
+    if rectA[2] < rectB[0]: # if right of rectA is less than left of rectB
+        return False
+    if rectA[0] > rectB[2]: # if left of rectangleA is greater than right of rectB
+        return False
+
+    #If none of the sides from A are outside B
+    return True
 
 if __name__ == "__main__":
     home_data = "/home/psm2208/data/GTDB/"
@@ -136,5 +172,7 @@ if __name__ == "__main__":
 
     type = sys.argv[1]
 
+
     #filename, gt_math_dir, det_math_dir, output_dir
     create_gt_segmentation(home_data + type, gt_math, det_math, output_dir)
+

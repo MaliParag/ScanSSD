@@ -5,6 +5,7 @@ import torch.backends.cudnn as cudnn
 from data import VOC_CLASSES as labelmap
 from data import *
 from ssd import build_ssd
+from math_detector import build_math_detector
 from utils import draw_boxes, helpers, save_boxes
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')
@@ -25,6 +26,8 @@ parser.add_argument('--model_type', default=300, type=int,
                     help='Type of ssd model, ssd300 or ssd512')
 parser.add_argument('--use_char_info', default=False, type=bool, help='Whether or not to use char info')
 parser.add_argument('--limit', default=-1, type=int, help='limit on number of test examples')
+parser.add_argument('--cfg', default="gtdb", type=str,
+                    help='Type of network: either gtdb or math_gtdb_512')
 
 parser.add_argument('-f', default=None, type=str, help="Dummy arg so we can load in Jupyter Notebooks")
 
@@ -102,7 +105,9 @@ def test_net(args, net, gpu_id, testset, transform, thresh):
 def test_voc():
     # load net
     num_classes = len(VOC_CLASSES) + 1 # +1 background
-    net = build_ssd('test', args.model_type, num_classes) # initialize SSD
+
+    net = build_ssd(args, 'test', args.model_type, num_classes) # initialize SSD
+
     net.load_state_dict(torch.load(args.trained_model))
     net.eval()
     print('Finished loading model!')
@@ -128,7 +133,13 @@ def test_gtdb():
 
     # load net
     num_classes = 2 # +1 background
-    net = build_ssd('test', gtdb, gpu_id, args.model_type, num_classes) # initialize SSD
+
+    if args.cfg == 'gtdb':
+        net = build_ssd(args, 'test', gtdb, gpu_id, args.model_type, num_classes)  # initialize SSD
+    else:
+        net = build_math_detector(args, 'test', math_gtdb_512, gpu_id, args.model_type, num_classes)
+
+    print(net)
     net.to(gpu_id)
 
     # TODO: should remove map_location argument

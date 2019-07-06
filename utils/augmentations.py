@@ -111,8 +111,7 @@ class Resize(object):
         # plt.savefig("eval/bface.png", dpi=600)
         # plt.close()
 
-        image = cv2.resize(image, (self.size,
-                                 self.size))
+        image = cv2.resize(image, (self.size,self.size), interpolation=cv2.INTER_AREA)
         # plt.imshow(image)
         # plt.savefig("eval/face.png", dpi=600)
         # plt.close()

@@ -8,7 +8,7 @@ class PriorBox(object):
     """Compute priorbox coordinates in center-offset form for each source
     feature map.
     """
-    def __init__(self, cfg):
+    def __init__(self, args, cfg):
         super(PriorBox, self).__init__()
         self.image_size = cfg['min_dim']
         # number of priors for feature map location (either 4 or 6)
@@ -22,6 +22,7 @@ class PriorBox(object):
         self.clip = cfg['clip']
         self.version = cfg['name']
         self.is_vertical_prior_boxes_enabled = cfg['is_vertical_prior_boxes_enabled']
+        self.args = args
         for v in self.variance:
             if v <= 0:
                 raise ValueError('Variances must be greater than 0')

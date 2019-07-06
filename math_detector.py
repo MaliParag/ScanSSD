@@ -6,7 +6,7 @@ from layers import *
 import os
 import numpy as np
 
-class SSD(nn.Module):
+class MathDetector(nn.Module):
     """Single Shot Multibox Architecture
     The network is composed of a base VGG network followed by the
     added multibox conv layers.  Each multibox layer branches into
@@ -25,7 +25,7 @@ class SSD(nn.Module):
     """
 
     def __init__(self, args, phase, cfg, size, base, extras, head, num_classes, gpu_id):
-        super(SSD, self).__init__()
+        super(MathDetector, self).__init__()
         self.phase = phase
         self.num_classes = num_classes
         self.cfg = cfg#(coco, voc)[num_classes == 21]
@@ -85,7 +85,6 @@ class SSD(nn.Module):
         # apply vgg up to fc7
         for k in range(23, len(self.vgg)):
             x = self.vgg[k](x)
-
         sources.append(x)
 
         # apply extra layers and cache source layer outputs
@@ -193,14 +192,14 @@ def multibox(vgg, extra_layers, cfg, size, num_classes):
 
     for k, v in enumerate(vgg_source):
         loc_layers += [nn.Conv2d(vgg[v].out_channels,
-                                 cfg[k] * 4, kernel_size=3, padding=1)]
+                                 cfg[k] * 4, kernel_size=(1,5), padding=(0,2))]
         conf_layers += [nn.Conv2d(vgg[v].out_channels,
-                        cfg[k] * num_classes, kernel_size=3, padding=1)]
+                        cfg[k] * num_classes, kernel_size=(1,5), padding=(0,2))]
     for k, v in enumerate(extra_layers[1::2], 2):
         loc_layers += [nn.Conv2d(v.out_channels, cfg[k]
-                                 * 4, kernel_size=3, padding=1)]
+                                 * 4, kernel_size=(1,5), padding=(0,2))]
         conf_layers += [nn.Conv2d(v.out_channels, cfg[k]
-                                  * num_classes, kernel_size=3, padding=1)]
+                                  * num_classes, kernel_size=(1,5), padding=(0,2))]
     return vgg, extra_layers, (loc_layers, conf_layers)
 
 
@@ -227,7 +226,7 @@ base = {
 
 
 
-def build_ssd(args, phase, cfg, gpu_id, size=300, num_classes=21):
+def build_math_detector(args, phase, cfg, gpu_id, size=300, num_classes=21):
     if phase != "test" and phase != "train":
         print("ERROR: Phase: " + phase + " not recognized")
         return
@@ -239,4 +238,4 @@ def build_ssd(args, phase, cfg, gpu_id, size=300, num_classes=21):
     base_, extras_, head_ = multibox(vgg(base[str(size)], 3, False),
                                      add_extras(cfg, size, 1024),
                                      cfg['mbox'][str(size)], size, num_classes)
-    return SSD(args, phase, cfg, size, base_, extras_, head_, num_classes, gpu_id)
+    return MathDetector(args, phase, cfg, size, base_, extras_, head_, num_classes, gpu_id)

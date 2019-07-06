@@ -13,6 +13,7 @@ from gtdb import feature_extractor
 import pickle
 from sklearn.ensemble import RandomForestClassifier
 from gtdb import fit_box
+import math
 
 clf = pickle.load(open('/home/psm2208/code/gtdb/random_forest.pkl', 'rb'))
 
@@ -36,40 +37,46 @@ def merge(args):
         for i, _ in enumerate(det_page_math):
             merge_graph[i] = set()
 
-        final_math = []
-        for math in det_page_math:
-            box = fit_box.adjust_box(im_bw, math)
-            final_math.append(box)
-
-        det_page_math = final_math
+        # final_math = []
+        # for f_math in det_page_math:
+        #     box = fit_box.adjust_box(im_bw, f_math)
+        #     final_math.append(box)
+        #
+        # det_page_math = final_math
 
         # find the closest det for each detection
-        for i, det_math1 in enumerate(det_page_math):
+        for i in range(len(det_page_math)):
 
-            x1 = det_math1[0] + (det_math1[2] - det_math1[0] / 2)
-            y1 = det_math1[1] + (det_math1[3] - det_math1[1] / 2)
+            det_math1 = det_page_math[i]
+
+            x1 = det_math1[0] + ((det_math1[2] - det_math1[0]) / 2)
+            y1 = det_math1[1] + ((det_math1[3] - det_math1[1]) / 2)
 
             min = float('inf')
             min_idx = -1
 
-            for j, det_math in enumerate(det_page_math):
-                if i != j:
-                    x2 = det_math[0] + (det_math[2] - det_math[0] / 2)
-                    y2 = det_math[1] + (det_math[3] - det_math[1] / 2)
+            for j in range(len(det_page_math)):
 
-                    c_dist = (y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1)
+                det_math = det_page_math[j]
+
+                if i != j:
+                    x2 = det_math[0] + ((det_math[2] - det_math[0]) / 2)
+                    y2 = det_math[1] + ((det_math[3] - det_math[1]) / 2)
+
+                    c_dist = np.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1)) #feature_extractor.vertical_dist_bb(det_page_math[i], det_page_math[j]) #y2-y1 #np.sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1))
 
                     if c_dist < min:
                         min = c_dist
                         min_idx = j
 
+            features = feature_extractor.extract_features(det_page_math[i], det_page_math[min_idx], test=True)
 
-            features = feature_extractor.extract_features_test(det_page_math[i], det_page_math[min_idx])
-            prediction = clf.predict([features])
+            if math.inf not in features and math.nan not in features:
+                prediction = clf.predict([features])
 
-            if prediction[0] == 1:
-                merge_graph[i].add(min_idx)
-                merge_graph[min_idx].add(j)
+                if prediction[0] == 1:
+                    merge_graph[i].add(min_idx)
+                    merge_graph[min_idx].add(i)
 
         math_regions_graph = group_math(merge_graph)
         math_regions = create_bb(math_regions_graph, det_page_math)
@@ -78,8 +85,9 @@ def merge(args):
         writer = csv.writer(open(output_file, "a"), delimiter=",")
 
         for math_region in math_regions:
-            math_region.insert(0, int(page_num))
-            writer.writerow(math_region)
+            box = fit_box.adjust_box(im_bw, math_region)
+            box.insert(0, int(page_num))
+            writer.writerow(box)
 
         print("Saved ", output_file, " > ", page_num)
 
@@ -150,6 +158,9 @@ def merge_segmentation(filename, image_dir, det_math_dir, output_dir):
         print('Processing-1', pdf_name)
         pdf_name = pdf_name.strip()
 
+        #TODO
+        pdf_name = 'Lusztig89'
+
         if pdf_name != '':
             det_math_file = os.path.join(det_math_dir, pdf_name + ".csv")
             det_math_regions = np.genfromtxt(det_math_file, delimiter=',', dtype=int)
@@ -157,18 +168,19 @@ def merge_segmentation(filename, image_dir, det_math_dir, output_dir):
             pages = np.unique(det_math_regions[:, 0])
 
             for page_num in pages:
-
+                #TODO
+                page_num = 2
                 det_page_math = det_math_regions[np.where(det_math_regions[:, 0] == page_num)]
                 det_page_math = det_page_math[:, 1:]
 
                 pages_list.append([output_dir, os.path.join(image_dir,
                                                         pdf_name,
-                                                        page_num + ".png"),
+                                                        str(page_num + 1) + ".png"),
                                            pdf_name, page_num, det_page_math])
 
     pdf_names.close()
 
-    pool = Pool(processes=1)
+    pool = Pool(processes=32)
     pool.map(merge, pages_list)
     pool.close()
     pool.join()
@@ -181,9 +193,8 @@ if __name__ == "__main__":
     home_anno = "/home/psm2208/data/GTDB/annotations/"
     home_char = "/home/psm2208/data/GTDB/char_annotations/"
 
-    output_dir = "/home/psm2208/code/eval/Test3_Focal_10_25/equal_30.0_segmented"
-
-    det_math = "/home/psm2208/code/eval/Test3_Focal_10_25/equal_30.0"
+    output_dir = "/home/psm2208/code/eval/Test3_Focal_10_25/sum_score_20.0_segmented"
+    det_math = "/home/psm2208/code/eval/Test3_Focal_10_25/sum_score_20.0"
 
     type = sys.argv[1]
 

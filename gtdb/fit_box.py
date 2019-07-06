@@ -11,6 +11,10 @@ def convert_to_binary(image):
 
     return im_bw
 
+def adjust_box_p(args):
+    im_bw, box = args
+    return adjust_box(im_bw, box)
+
 def adjust_box(im_bw, box):
     box = contract(im_bw, box)
     box = expand(im_bw, box)

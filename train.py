@@ -6,6 +6,7 @@ from data import *
 from utils.augmentations import SSDAugmentation
 from layers.modules import MultiBoxLoss
 from ssd import build_ssd
+from math_detector import build_math_detector
 import os
 import sys
 import time
@@ -66,6 +67,8 @@ parser.add_argument('--type', default="processed_train", type=str,
                     help='Type of image set to use. This is list of file names, one per line')
 parser.add_argument('--use_char_info', default=False, type=str2bool,
                     help='Whether to use char position info and labels')
+parser.add_argument('--cfg', default="gtdb", type=str,
+                    help='Type of network: either gtdb or math_gtdb_512')
 
 args = parser.parse_args()
 
@@ -85,7 +88,12 @@ if not os.path.exists(args.save_folder):
 
 
 def train():
-    cfg = gtdb
+
+    if args.cfg == 'gtdb':
+        cfg = gtdb
+    else:
+        cfg = math_gtdb_512
+
     dataset = GTDBDetection(args,
                             transform=SSDAugmentation(cfg['min_dim'],
                                                       MEANS))
@@ -101,14 +109,18 @@ def train():
         print('Using GPU with id ', gpu_id)
         torch.cuda.set_device(gpu_id)
 
-    ssd_net = build_ssd('train', cfg, gpu_id, cfg['min_dim'], cfg['num_classes'])
+    if args.cfg == 'math_gtdb_512':
+        ssd_net = build_math_detector(args, 'train', cfg, gpu_id, cfg['min_dim'], cfg['num_classes'])
+    else:
+        ssd_net = build_ssd(args, 'train', cfg, gpu_id, cfg['min_dim'], cfg['num_classes'])
+
     net = ssd_net
     print(net)
 
     ct = 0
     # freeze first few layers
     for child in net.vgg.children():
-        if ct > args.layers_to_freeze:
+        if ct >= args.layers_to_freeze:
             break
 
         child.requires_grad = False

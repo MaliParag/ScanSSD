@@ -14,7 +14,7 @@ import scipy.ndimage as ndimage
 import copy
 import shutil
 
-def check_collision(rectA,  rectB):
+def check_inside(rectA, rectB):
 
     # returns True if A is inside B
     #left, top, right, bottom
@@ -41,7 +41,7 @@ def remove(args):
 
         for i, m1 in enumerate(page_math):
             for j, m2 in enumerate(page_math[i+1:]):
-                if check_collision(m1, m2):
+                if check_inside(m1, m2):
                     valid[i] = False
                     break
 
@@ -64,7 +64,8 @@ def remove(args):
 
 def remove_rect(filename, math_dir, output_dir):
 
-    shutil.rmtree(output_dir)
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
 
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
@@ -102,8 +103,8 @@ if __name__ == "__main__":
     home_images = "/home/psm2208/data/GTDB/images/"
     home_anno = "/home/psm2208/data/GTDB/annotations/"
 
-    math_dir = "/home/psm2208/data/GTDB/relations_adjust_csv/"
-    output_dir = "/home/psm2208/data/GTDB/relations_adjust_csv_removed/"
+    math_dir = "/home/psm2208/code/eval/Test3_Focal_10_25/equal_30.0_segmented/"
+    output_dir = "/home/psm2208/code/eval/Test3_Focal_10_25/equal_30.0_segmented_2/"
 
     type = sys.argv[1]
 
