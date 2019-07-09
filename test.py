@@ -4,7 +4,6 @@ import argparse
 import torch.backends.cudnn as cudnn
 from data import *
 from ssd import build_ssd
-from math_detector import build_math_detector
 from utils import draw_boxes, helpers, save_boxes
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')

@@ -6,7 +6,6 @@ from data import *
 from utils.augmentations import SSDAugmentation
 from layers.modules import MultiBoxLoss
 from ssd import build_ssd
-from math_detector import build_math_detector
 import os
 import sys
 import time
@@ -27,9 +26,9 @@ def str2bool(v):
 parser = argparse.ArgumentParser(
     description='Single Shot MultiBox Detector Training With Pytorch')
 train_set = parser.add_mutually_exclusive_group()
-parser.add_argument('--dataset', default='VOC', choices=['VOC', 'COCO', 'GTDB'],
-                    type=str, help='VOC, COCO or GTDB')
-parser.add_argument('--dataset_root', default=VOC_ROOT,
+parser.add_argument('--dataset', default='GTDB', choices=['GTDB'],
+                    type=str, help='choose GTDB')
+parser.add_argument('--dataset_root', default=GTDB_ROOT,
                     help='Dataset root directory path')
 parser.add_argument('--basenet', default='vgg16_reducedfc.pth',
                     help='Pretrained base model')
@@ -41,7 +40,7 @@ parser.add_argument('--start_iter', default=0, type=int,
                     help='Resume training at this iter')
 parser.add_argument('--num_workers', default=4, type=int,
                     help='Number of workers used in data loading')
-parser.add_argument('--cuda', default=True, type=str2bool,
+parser.add_argument('--cuda', default=True, type=bool,
                     help='Use CUDA to train model')
 parser.add_argument('--lr', '--learning-rate', default=1e-4, type=float,
                     help='initial learning rate')
@@ -53,7 +52,7 @@ parser.add_argument('--alpha', default=1.0, type=float,
                     help='Alpha for the multibox loss')
 parser.add_argument('--gamma', default=0.1, type=float,
                     help='Gamma update for SGD')
-parser.add_argument('--visdom', default=False, type=str2bool,
+parser.add_argument('--visdom', default=False, type=bool,
                     help='Use visdom for loss visualization')
 parser.add_argument('--save_folder', default='weights/',
                     help='Directory for saving checkpoint models')
@@ -65,7 +64,7 @@ parser.add_argument('--suffix', default="_10", type=str,
                     help='Stride % used while generating images or dpi from which images was generated or some other identifier')
 parser.add_argument('--type', default="processed_train", type=str,
                     help='Type of image set to use. This is list of file names, one per line')
-parser.add_argument('--use_char_info', default=False, type=str2bool,
+parser.add_argument('--use_char_info', default=False, type=bool,
                     help='Whether to use char position info and labels')
 parser.add_argument('--cfg', default="ssd512", type=str,
                     help='Type of network: either gtdb or math_gtdb_512')
@@ -75,7 +74,7 @@ parser.add_argument('--kernel', default="3 3", type=int, nargs='+',
                     help='Kernel size for feature layers: 3 3 or 1 5')
 parser.add_argument('--padding', default="1 1", type=int, nargs='+',
                     help='Padding for feature layers: 1 1 or 0 2')
-parser.add_argument('--neg_mining', default=True, type=str2bool,
+parser.add_argument('--neg_mining', default=True, type=bool,
                     help='Whether or not to use hard negative mining with ratio 1:3')
 
 args = parser.parse_args()
@@ -152,7 +151,7 @@ def train():
 
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)
-    criterion = MultiBoxLoss(args, cfg['num_classes'], 0.5, 0, True, 3, 0.5,
+    criterion = MultiBoxLoss(args, cfg, 0.5, 0, True, 3, 0.5,
                              False, args.cuda)
 
     net.train()
