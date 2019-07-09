@@ -27,7 +27,7 @@ def contract(im_bw, box):
     cols_with_pixels = np.any(im_bw[box[1]:box[3], box[0]:box[2]], axis=0)
 
     if len(rows_with_pixels==True) == 0 or len(cols_with_pixels==True) == 0:
-        box = [0,0,0,0,0]
+        box = [0,0,0,0]
         return box
 
     left = box[0] + np.argmax(cols_with_pixels==True)

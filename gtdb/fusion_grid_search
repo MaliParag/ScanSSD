@@ -1,0 +1,11 @@
+N=10
+total=0
+for a in $(seq 0.3 0.1 1.0); do
+    for b in $(seq 0.0 0.1 1.0); do
+        for c in $(seq 0.0 0.1 1.0); do
+            ((i=i%N)); ((i++==0)) && wait
+            python3 /home/psm2208/Workspace/IOU_lib/IOUevaluater.py --detections /home/psm2208/code/eval/train_math_kernel/fusion_30.0/fusion\_$a\_$b\_$c --ground_truth /home/psm2208/Workspace/Task3_Detection/Train/GT_math_csv/ > /home/psm2208/code/eval/train_math_kernel/fusion_30.0/fusion\_$a\_$b\_$c.out &
+            echo $((total++))
+        done
+    done
+done

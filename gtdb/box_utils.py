@@ -1,3 +1,6 @@
+from collections import OrderedDict
+import gtdb.feature_extractor
+
 # check if two rectangles intersect
 def intersects(first, other):
     return not (first[2] < other[0] or
@@ -5,19 +8,21 @@ def intersects(first, other):
                 first[1] > other[3] or
                 first[3] < other[1])
 
-def find_intersecting_boxes(math_regions):
-
+def find_intersecting_boxes(math_regions, sorted=True):
+    # specific for fusion algo
     # returns indices of intersecting math region for each math region
     inter_map = {}
 
     for i in range(len(math_regions)):
-        inter_map[i] = set()
+        inter_map[i] = []
 
     for i in range(len(math_regions)):
         for j in range(len(math_regions[i+1:])):
             if intersects(math_regions[i], math_regions[i+1+j]):
-                inter_map[i].add(i+1+j)
-                inter_map[i+1+j].add(i)
+                inter_map[i].append(i+1+j)
+                #inter_map[i+1+j].append(i)
+
+    inter_map = OrderedDict(inter_map)
 
     return inter_map
 
@@ -30,3 +35,13 @@ def merge(box1, box2):
     final_box[3] = max(box1[3], box2[3])  # top + height
 
     return final_box
+
+
+if __name__ == '__main__':
+    box1 = [849.00,3797.00,1403.00,3890.00]
+    box2 = [1169.00,3804.00,1392.00,3886.00]
+
+    print(intersects(box1, box2))
+    print(gtdb.feature_extractor.inclusion(box1, box2))
+    print(gtdb.feature_extractor.inclusion(box2, box1))
+    print(gtdb.feature_extractor.iou(box2, box1))

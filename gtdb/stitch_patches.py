@@ -18,8 +18,9 @@ from gtdb import fit_box
 from gtdb import box_utils
 from gtdb import feature_extractor
 import shutil
-import random
 import time
+from collections import OrderedDict
+from collections import deque
 
 # Default parameters for thr GTDB dataset
 intermediate_width = 4800
@@ -114,7 +115,7 @@ def read_math_regions(args):
             math_regions = np.concatenate((math_regions, annotations_map[key]), axis=0)
 
     math_regions = math_regions.astype(int)
-    math_regions = math_regions[math_regions[:, 4].argsort()]
+    math_regions = math_regions[(-math_regions[:, 4]).argsort()]
 
     return math_regions
 
@@ -154,6 +155,8 @@ def read_gt_regions(gt_dir, pdf_name, page_num):
         except:
             gt_regions = None
 
+    return gt_regions
+
 
 def combine_math_regions(args):
 
@@ -165,7 +168,7 @@ def combine_math_regions(args):
     :return:
     """
     pdf_name, page_num, math_files_list, char_filepath, image_path, output_image, \
-    gt_dir, thresh, output_dir, alpha, beta, gamma = args
+    gt_dir, thresh, output_dir = args
 
     try:
         image = cv2.imread(image_path)
@@ -186,25 +189,24 @@ def combine_math_regions(args):
 
         processed_math_regions = np.copy(math_regions)
 
-        #math_regions = perform_nms(math_regions)
-        #math_regions = overlap_expand(math_regions)
-        #math_regions = math_regions.tolist()
-
         # This will give final math regions
         math_regions = voting_algo(math_regions, char_data, image, pdf_name, page_num,
-                                   output_dir, alpha, beta, gamma, algorithm=algorithm, thresh_votes=thresh)
-
-        #print('Number of math regions found ', len(math_regions))
+                                   output_dir, algorithm=algorithm, thresh_votes=thresh)
+        math_regions = np.reshape(math_regions, (-1,4))
         gt_regions = read_gt_regions(gt_dir, pdf_name, page_num)
+
+        if not os.path.exists(os.path.dirname(output_image)):
+            os.mkdir(os.path.dirname(output_image))
 
         if if_visualize == 1:
             visualize.draw_all_boxes(image, processed_math_regions, math_regions, gt_regions, output_image)
 
-        # print('saved ', output_image)
-        # visualize.draw_boxes_cv(image, math_regions, gt_regions, output_image)
-        # Following works only with 'none' stitching method
-        # Can't use any stitching method with this function
-        #visualize.draw_stitched_boxes(image, math_regions, output_image)
+        col = np.array([int(page_num) - 1] * math_regions.shape[0])
+        math_regions = np.concatenate((col[:, np.newaxis], math_regions), axis=1)
+
+        math_file = open(os.path.join(output_dir, pdf_name + '.csv'), 'a')
+        np.savetxt(math_file, math_regions, fmt='%.2f', delimiter=',')
+        math_file.close()
 
     except:
         print("Exception while processing ", pdf_name, " ", page_num, " ", sys.exc_info())
@@ -231,7 +233,7 @@ def preprocess_math_regions(math_regions, image):
 
 def fusion(args):
 
-    pdf_name, page_num, output_dir, inter_math, math_cache, alpha, beta, gamma = args
+    pdf_name, page_num, output_dir, math_cache, alpha, beta, gamma = args
 
     #equal_votes = voting_equal(votes, math_regions)
     math_regions = np.copy(math_cache)
@@ -242,28 +244,21 @@ def fusion(args):
     #inter_math = box_utils.find_intersecting_boxes(math_regions)
 
 #    math_regions = math_regions.tolist()
-    final_math = []
-    removed = set(np.argwhere(math_regions[:,-1]<(alpha*100)).flatten())
 
-    for key in inter_math:
+    # intersection of math boxes changes on the fly
+    # as they grow if fused with other boxes
 
-        if key not in removed:
-            box1 = math_regions[key]
+    # iteratively fuse boxes
+    previous_len = len(math_regions)
 
-            for v in inter_math[key]:
-                if v not in removed:
-                    box2 = math_regions[v]
+    while True:
+        math_regions = fuse(math_regions, alpha, beta, gamma)
+        current_len = len(math_regions)
 
-                    # if IOU > beta, merge
-                    if feature_extractor.iou(box1, box2) > beta:
-                        box1 = box_utils.merge(box1, box2)
-                        removed.add(v)
+        if current_len == previous_len:
+            break
 
-                    # if inclusion > gamma, remove
-                    elif feature_extractor.inclusion(box1, box2) > gamma:
-                        removed.add(key)
-                    elif feature_extractor.inclusion(box2, box1) > gamma:
-                        removed.add(v)
+        previous_len = current_len
 
     op_dir = os.path.join(output_dir, 'fusion_' + str("{:.1f}".format(alpha)) + '_' +
                           str("{:.1f}".format(beta)) + '_' + str("{:.1f}".format(gamma)))
@@ -271,9 +266,49 @@ def fusion(args):
     if not os.path.exists(op_dir):
         os.mkdir(op_dir)
 
-    math_file = open(os.path.join(op_dir, pdf_name + '.csv'), 'a')
-    #writer = csv.writer(math_file, delimiter=",")
+    col = np.array([int(page_num) - 1] * math_regions.shape[0])
+    math_regions = np.concatenate((col[:, np.newaxis], math_regions), axis=1)
 
+    math_file = open(os.path.join(op_dir, pdf_name + '.csv'), 'a')
+    np.savetxt(math_file, math_regions, fmt='%.2f', delimiter=',')
+    math_file.close()
+
+
+    #TODO: Remove the last column from math_regions i.e confidence column
+    return math_regions
+
+
+def fuse(math_regions, alpha, beta, gamma):
+
+    final_math = []
+    removed = set(np.argwhere(math_regions[:,-1]<(alpha*100)).flatten())
+
+    for key in range(len(math_regions)):
+
+        if key not in removed:
+            box1 = math_regions[key]
+
+        for j in range(len(math_regions[key+1:])):
+            v = key+1+j
+            if key not in removed and v not in removed:
+                box2 = math_regions[v]
+
+                # if IOU > beta, merge
+                if feature_extractor.iou(box1, box2) > beta:
+                    box1 = box_utils.merge(box1, box2)
+                    removed.add(v)
+
+                # if inclusion > gamma, remove
+                elif feature_extractor.inclusion(box1, box2) > gamma:
+                    removed.add(key)
+                elif feature_extractor.inclusion(box2, box1) > gamma:
+                    removed.add(v)
+
+        if key not in removed:
+            math_regions[key][:4] = box1[:4]
+
+
+    #writer = csv.writer(math_file, delimiter=",")
     count = 0
     keep = []
 
@@ -286,14 +321,7 @@ def fusion(args):
 
     math_regions = math_regions[keep]
     #col = np.full((1, math_regions.shape[0]), )
-
-    col = np.array([int(page_num) - 1] * math_regions.shape[0])
-    math_regions = np.concatenate((col[:, np.newaxis], math_regions), axis=1)
-
-    np.savetxt(math_file, math_regions, delimiter=',')
-
-    return final_math
-
+    return math_regions
 
 def voting_equal(votes, math_regions):
     # cast votes for the regions
@@ -473,23 +501,13 @@ def char_algo(math_regions, char_data, image, algorithm='equal', thresh_votes=20
 
 
 def voting_algo(math_regions, char_data, image, pdf_name, page_num,
-                output_dir, alpha, beta, gamma, algorithm='equal', thresh_votes=20):
+                output_dir, algorithm='equal', thresh_votes=20):
 
     if algorithm == 'char_algo':
         return char_algo(math_regions, char_data, image, algorithm, thresh_votes)
 
-    elif algorithm == 'fusion':
-        fusion(copy.deepcopy(math_regions), pdf_name, page_num, output_dir, alpha=alpha, beta=beta, gamma=gamma)
-        return math_regions.tolist()
-
     # vote for the regions
     votes = vote_for_regions(math_regions, image, algorithm, thresh_votes)
-
-    #cv2.imwrite('boundary_scores.png', boundary_scores)
-    #math_region_labels = label_regions(math_regions, image)
-
-    votes_regions = np.copy(votes)
-    #math_regions = math_regions[math_regions[:, 4].argsort()]
 
     # TODO : Row info might be useful
     # use image to find the rows where all values are zero
@@ -513,32 +531,8 @@ def voting_algo(math_regions, char_data, image, pdf_name, page_num,
     #     votes_regions[row] = 0
     #     #image[row] = 0
 
-    #votes[boundary_scores>50] = 0
-    #cv2.imwrite('/home/psm2208/test.png', votes * 255)
-
-    # this defines the connection filter
-    # we allow any kind of connection
-    # votes = votes.astype(np.uint8)
-    #
-    # contours, _ = cv2.findContours(votes, 1, 2)
-    #
-    # for cnt in contours:
-    #     approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)
-    # #    print('len ', len(approx))
-    #     if len(approx) >= 4:
-    #         #print("rectangle")
-    #         #cv2.drawContours(image, [cnt], 0, 255, -1)
-    #         x, y, w, h = cv2.boundingRect(cnt)
-    #         votes[y:y+h, x:x+w] = votes_regions[y:y+h, x:x+w]
-    #cv2.imwrite("test.png", image)
-
     im_bw = convert_to_binary(image)
-
     structure = np.ones((3, 3), dtype=np.int)
-
-    # find the rectangular regions
-    # votes = ndimage.binary_opening(votes, structure=structure)
-
     labeled, ncomponents = label(votes, structure)
 
     # found the boxes. Now extract the co-ordinates left,top,right,bottom
@@ -548,7 +542,6 @@ def voting_algo(math_regions, char_data, image, pdf_name, page_num,
     for i in range(ncomponents):
 
         labels = (labeled == (i+1))
-        #labels = (labeled == i)
         pixels = indices[labels.T]
 
         if len(pixels) < 1:
@@ -556,12 +549,12 @@ def voting_algo(math_regions, char_data, image, pdf_name, page_num,
 
         box = [min(pixels[:, 0]), min(pixels[:, 1]), max(pixels[:, 0]), max(pixels[:, 1])]
 
-        # put all ones in bw image
-        #cv2.imwrite("/home/psm2208/test.png", im_bw * 255)
-
         # expansion to correctly fit the region
         box = fit_box.adjust_box(im_bw, box)
 
+        # if box has 0 width or height, do not add it in the final detections
+        if feature_extractor.width(box) < 1 or feature_extractor.height(box) < 1:
+            continue
 
         # if not np.all(votes[box[1]:box[3], box[0]:box[2]]):
         #
@@ -760,115 +753,9 @@ def overlap_expand(math_regions):
     return math_regions
 
 
-def stitch_patches(args):
+def read_page_info(filename, annotations_dir, image_dir, gt_dir, char_gt):
 
-    pdf_name, annotations_dir, output_dir, image_dir, gt_dir, char_annotations_dir, thresh = args
-
-    print('Processing ', pdf_name)
-
-    #annotations_dir = '/home/psm2208/data/GTDB/processed_annotations/',
-    #output_dir = '/home/psm2208/code/eval/stitched_output'
-    #image_dir = '/home/psm2208/data/GTDB/images/'
-
-    # annotation map per pdf
-    # map: {'name': {'1': []}}
-    annotations_map = {}
-
-    if pdf_name not in annotations_map:
-        annotations_map[pdf_name] = {}
-
-    for root, dirs, _ in os.walk(os.path.join(annotations_dir, pdf_name), topdown=False):
-
-        for dir in dirs:
-            for filename in os.listdir(os.path.join(annotations_dir, pdf_name, dir)):
-
-                if filename.endswith(".csv") or filename.endswith(".pmath"):
-                    patch_num = os.path.splitext(filename)[0]
-                    page_num = os.path.basename(os.path.join(annotations_dir, pdf_name, dir))
-
-                    if page_num not in annotations_map[pdf_name]:
-                        annotations_map[pdf_name][page_num] = []
-
-                    annotations_map[pdf_name][page_num].append(os.path.join(annotations_dir, pdf_name, dir, filename))
-
-    char_annotations_map = {}
-    if pdf_name not in char_annotations_map:
-        char_annotations_map[pdf_name] = {}
-
-    for filename in os.listdir(os.path.join(char_annotations_dir, pdf_name)):
-
-        if filename.endswith(".csv") or filename.endswith(".pchar"):
-            page_num = os.path.splitext(filename)[0]
-
-            char_annotations_map[pdf_name][page_num] = \
-                os.path.join(char_annotations_dir, pdf_name, filename)
-
-    math_file = open(os.path.join(output_dir, pdf_name+'.csv'),'w')
-    writer = csv.writer(math_file, delimiter=",")
-
-    if not os.path.exists(os.path.join(output_dir, pdf_name)):
-        os.mkdir(os.path.join(output_dir, pdf_name))
-
-
-    for key in sorted(annotations_map[pdf_name]):
-
-        if key not in char_annotations_map[pdf_name]:
-            char_annotations_map[pdf_name][key] = ""
-
-        # basically it is called for each page in the pdf
-        math_regions = combine_math_regions(
-                        pdf_name,
-                        key,
-                        annotations_map[pdf_name][key],
-                        char_annotations_map[pdf_name][key],
-                        os.path.join(image_dir, pdf_name, key + '.png'),
-                        os.path.join(output_dir, pdf_name, key + '.png'),
-                        gt_dir,
-                        thresh,
-                        output_dir)
-
-        for math_region in math_regions:
-            math_region.insert(0,int(key)-1)
-            writer.writerow(math_region)
-
-    math_file.close()
-
-
-def patch_stitch(filename, annotations_dir, output_dir, image_dir='/home/psm2208/data/GTDB/images/',
-                 gt_dir="/home/psm2208/data/GTDB/", char_gt="", thresh=20):
-
-    if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
-
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
-
-    training_pdf_names_list = []
-    training_pdf_names = open(filename, 'r')
-
-    for pdf_name in training_pdf_names:
-        pdf_name = pdf_name.strip()
-
-        if pdf_name != '':
-            training_pdf_names_list.append((pdf_name, annotations_dir, output_dir, image_dir, gt_dir, char_gt, thresh))
-
-    training_pdf_names.close()
-
-    pool = Pool(processes=1)
-    pool.map(stitch_patches, training_pdf_names_list)
-    pool.close()
-    pool.join()
-
-
-def fusion_stitch_grid(filename, annotations_dir, output_dir,
-                       image_dir='/home/psm2208/data/GTDB/images/',
-                       gt_dir="/home/psm2208/data/GTDB/", char_gt="", thresh=20):
-
-    if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
-
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
+    #annotations_dir is dir of detections for sub-images
 
     pages_list = []
     pdf_names = open(filename, 'r')
@@ -899,7 +786,6 @@ def fusion_stitch_grid(filename, annotations_dir, output_dir,
                             annotations_map[pdf_name][page_num].append(
                                 os.path.join(annotations_dir, pdf_name, dir, filename))
 
-
             if pdf_name not in char_annotations_map:
                 char_annotations_map[pdf_name] = {}
 
@@ -917,9 +803,69 @@ def fusion_stitch_grid(filename, annotations_dir, output_dir,
                         page_num = os.path.splitext(name)[0]
                         if page_num in annotations_map[pdf_name]:
                             image = cv2.imread(os.path.join(image_dir, pdf_name, page_num + '.png'))
-                            pages_list.append((image,pdf_name,page_num,annotations_map[pdf_name][page_num]))
+                            pages_list.append((image, pdf_name, page_num, annotations_map[pdf_name][page_num]))
 
     pdf_names.close()
+    return pages_list, annotations_map, char_annotations_map
+
+
+def stitch_patches(filename, annotations_dir, output_dir,
+                   image_dir='/home/psm2208/data/GTDB/images/',
+                   gt_dir="/home/psm2208/data/GTDB/", char_gt="", thresh=20):
+
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
+    pages_list, annotations_map, char_annotations_map = \
+        read_page_info(filename, annotations_dir, image_dir, gt_dir, char_gt)
+
+    pooling_list = []
+
+    for i, page in enumerate(pages_list):
+        pdf_name = page[1]
+        page_num = page[2]
+        pooling_list.append((
+            pdf_name,
+            page_num,
+            annotations_map[pdf_name][page_num],
+            char_annotations_map[pdf_name][page_num],
+            os.path.join(image_dir, pdf_name, page_num + '.png'),
+            os.path.join(output_dir, pdf_name, page_num + '.png'),
+            gt_dir,
+            thresh,
+            output_dir))
+
+    pool = Pool(processes=32)
+    total = str(len(pooling_list))
+
+    start = time.time()
+    init = start
+
+    for i, _ in enumerate(pool.imap_unordered(combine_math_regions, pooling_list), 1):
+         print('\nprogress: ' + str(i) + '/' + total)
+         if i%100==0:
+             current = time.time()
+             print('\nTime taken for last 100, total time:', current-start, current-init)
+             start = time.time()
+
+    pool.close()
+    pool.join()
+
+
+def fusion_stitch_grid(filename, annotations_dir, output_dir,
+                       image_dir='/home/psm2208/data/GTDB/images/',
+                       gt_dir="/home/psm2208/data/GTDB/", char_gt="", thresh=20):
+
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
+    pages_list = read_page_info(filename, annotations_dir, image_dir, gt_dir, char_gt)
 
     # find math regions
     pool = Pool(processes=32)
@@ -931,11 +877,11 @@ def fusion_stitch_grid(filename, annotations_dir, output_dir,
 
 
     # find intersecting math regions
-    pool = Pool(processes=32)
-    inter_math = pool.map(box_utils.find_intersecting_boxes, math_cache)
+    #pool = Pool(processes=32)
+    #inter_math = pool.map(box_utils.find_intersecting_boxes, math_cache)
 
-    pool.close()
-    pool.join()
+    #pool.close()
+    #pool.join()
 
     fusion_list = []
 
@@ -943,13 +889,14 @@ def fusion_stitch_grid(filename, annotations_dir, output_dir,
         pdf_name = page[1]
         page_num = page[2]
         for a in np.arange(0.3, 1.1, 0.1):
-            for b in np.arange(0.0, 1.1, 0.1):
-                for c in np.arange(0.0, 1.1, 0.1):
+           for b in np.arange(0.0, 1.1, 0.1):
+               for c in np.arange(0.0, 1.1, 0.1):
                     fusion_list.append((pdf_name,
                                         page_num,
                                         output_dir,
-                                        inter_math[i],
+                                        #inter_math[i],
                                         math_cache[i],
+                                        #0.7,0.2,0.2))
                                         a,b,c))
 
     pool = Pool(processes=32)
@@ -970,20 +917,9 @@ def fusion_stitch_grid(filename, annotations_dir, output_dir,
 
 
 if __name__ == '__main__':
-    #stitch_patches("TMJ_1990_163_193")
-    #stitch_patches("AIF_1970_493_498", "/home/psm2208/code/eval")
-    #filename = sys.argv[1] # train_pdf
 
-    #stitch_patches(("Arkiv_1997_185_199", "/home/psm2208/code/eval/Train_Focal_100",
-    #             "/home/psm2208/code/eval/Train_Focal_100/out", '/home/psm2208/data/GTDB/images/'))
-
-    #patch_stitch(filename, sys.argv[2], sys.argv[3])
+    # TODO: use argparser
     stride = 0.1
-
-    #stitch_patches(("InvM_1999_163_181", "/home/psm2208/code/eval/Train_Focal_10_25",
-    #                "/home/psm2208/code/eval/Train_Focal_10_25/voting_equal_rows",
-    #                '/home/psm2208/data/GTDB/images/'))
-
     thresh = float(sys.argv[1]) # 30
     algorithm = sys.argv[2] # equal
     type = sys.argv[3]  # train_pdf
@@ -1005,13 +941,13 @@ if __name__ == '__main__':
     home_anno = "/home/psm2208/data/GTDB/annotations/"
     home_char = "/home/psm2208/data/GTDB/char_annotations/"
 
-    # patch_stitch(home_data + type, home_eval + dir_to_eval,
-    #              home_eval + dir_to_eval + "/" + algorithm + "_" + str(thresh),
-    #              home_images, home_anno, home_char, thresh)
+    stitch_patches(home_data + type, home_eval + dir_to_eval,
+                   home_eval + dir_to_eval + "/" + algorithm + "_" + str(thresh),
+                   home_images, home_anno, home_char, thresh)
 
-    fusion_stitch_grid(home_data + type, home_eval + dir_to_eval,
-                       home_eval + dir_to_eval + "/" + algorithm + "_" + str(thresh),
-                       home_images, home_anno, home_char, thresh)
+    #fusion_stitch_grid(home_data + type, home_eval + dir_to_eval,
+    #                   home_eval + dir_to_eval + "/" + algorithm + "_" + str(thresh),
+    #                   home_images, home_anno, home_char, thresh)
 
     # patch_stitch("/home/psm2208/data/GTDB/test_pdf", "/home/psm2208/code/eval/Test_char_Focal_10_25",
     #              "/home/psm2208/code/eval/Test_char_Focal_10_25/voting_equal_" + str(thresh),

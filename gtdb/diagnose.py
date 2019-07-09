@@ -1,6 +1,4 @@
 # Author: Parag Mali
-# This script divides a big image into smaller images using a sliding window.
-# It also divides corresponding bounding box annotations.
 
 # read the image
 import os
@@ -65,7 +63,7 @@ def read_data(training_pdf_names, char_dir, gt_math_dir, det_math_dir):
 
     for filename in training_pdf_names:
 
-        path = os.path.join(gt_math_dir, filename + ".math")
+        path = os.path.join(gt_math_dir, filename + ".csv")
 
         map = {}
         with open(path, 'r') as csvfile:
@@ -88,7 +86,11 @@ def char_level_eval(training_pdf_names, total_math_char, gt_math_bbs, det_math_b
 
     for key in det_math_bbs:
         for page in det_math_bbs[key]:
-            args.append([key, det_math_bbs[key][page], char_bbs[key][page], gt_math_bbs[key][page]])
+            if page not in gt_math_bbs[key]:
+                gt_math = []
+            else:
+                gt_math = gt_math_bbs[key][page]
+            args.append([key, det_math_bbs[key][page], char_bbs[key][page], gt_math])
 
     pool = Pool(processes=16)
     ans = pool.map(character_level_score, args)
@@ -111,9 +113,9 @@ def char_level_eval(training_pdf_names, total_math_char, gt_math_bbs, det_math_b
 
     fscore =  2 * recall * precision / (recall + precision)
 
-    print('Recall\t', recall)
-    print('Precision\t', precision)
-    print('F-Score\t', fscore)
+    print('Char Recall\t', recall)
+    print('Char Precision\t', precision)
+    print('Char F-Score\t', fscore)
 
 
 def character_level_score(args):
@@ -193,12 +195,12 @@ def box_level_granular_eval(training_pdf_names, total_math_char, gt_math_dir, de
 
     # single char scores - coarse
     # precision
-    print("Number of single character regions correctly detected @50,@75", single_char_det)
-    print("Total number of single character regions detected", total_single_char_det)
+    print("Number of single character regions correctly detected IOU50, IOU75 ", single_char_det)
+    print("Total number of single character regions detected ", total_single_char_det)
     print("Total number of single character regions GT ", single_char_gt)
 
-    print("Number of multi character regions correctly detected @50,@75", multi_char_det)
-    print("Total number of multi character regions detected", total_multi_char_det)
+    print("Number of multi character regions correctly detected IOU50, IOU75 ", multi_char_det)
+    print("Total number of multi character regions detected ", total_multi_char_det)
     print("Total number of multi character regions GT ", multi_char_gt)
 
     # Single character regions
@@ -208,34 +210,34 @@ def box_level_granular_eval(training_pdf_names, total_math_char, gt_math_dir, de
     rec_50 = single_char_det[0] / single_char_gt
     fscore_50 = 2*prec_50*rec_50/(prec_50 + rec_50)
 
-    print("Precision@50", prec_50)
-    print("Recall@50", rec_50)
-    print("F-score@50", fscore_50)
+    print("Precision IOU50 ", prec_50)
+    print("Recall IOU50 ", rec_50)
+    print("F-score IOU50 ", fscore_50)
 
     prec_75 = single_char_det[1] / total_single_char_det
     rec_75 = single_char_det[1] / single_char_gt
     fscore_75 = 2 * prec_75 * rec_75 / (prec_75 + rec_75)
 
-    print("Precision@75", prec_75)
-    print("Recall@75", rec_75)
-    print("F-score@75", fscore_75)
+    print("Precision IOU75 ", prec_75)
+    print("Recall IOU75 ", rec_75)
+    print("F-score IOU75 ", fscore_75)
 
     print("***** Results : Multi Character Regions ***** ")
     prec_50 = multi_char_det[0] / total_multi_char_det
     rec_50 = multi_char_det[0] / multi_char_gt
     fscore_50 = 2 * prec_50 * rec_50 / (prec_50 + rec_50)
 
-    print("Precision@50", prec_50)
-    print("Recall@50", rec_50)
-    print("F-score@50", fscore_50)
+    print("Precision IOU50 ", prec_50)
+    print("Recall IOU50 ", rec_50)
+    print("F-score IOU50 ", fscore_50)
 
     prec_75 = multi_char_det[1] / total_multi_char_det
     rec_75 = multi_char_det[1] / multi_char_gt
     fscore_75 = 2 * prec_75 * rec_75 / (prec_75 + rec_75)
 
-    print("Precision@75", prec_75)
-    print("Recall@75", rec_75)
-    print("F-score@75", fscore_75)
+    print("Precision IOU75 ", prec_75)
+    print("Recall IOU75 ", rec_75)
+    print("F-score IOU75 ", fscore_75)
 
 def find_merged_regions(training_pdf_names, gt_math_boxes, det_math_boxes):
 
@@ -262,9 +264,10 @@ def find_merged_regions(training_pdf_names, gt_math_boxes, det_math_boxes):
                     if intersects(det_bb, gt_bb):
                         count = count + 1
 
-                if count > 1:
-                    det_regions_with_multi_math = \
-                        det_regions_with_multi_math + count
+                    if count > 1:
+                        det_regions_with_multi_math = \
+                            det_regions_with_multi_math + count
+                        break
 
     print("Merged boxes ", det_regions_with_multi_math)
 
@@ -307,16 +310,18 @@ if __name__ == '__main__':
 
     training_pdf_names.close()
 
+    detected_math_dir = sys.argv[2] #'/home/psm2208/code/eval/final_submission/Test/'
+    gt_math_dir = sys.argv[3]  # '/home/psm2208/data/GTDB/annotations/'
+
     gt_char_dir = '/home/psm2208/data/GTDB/char_annotations/'
-    gt_math_dir = '/home/psm2208/data/GTDB/annotations/'
-    detected_math_dir = '/home/psm2208/code/eval/final_submission/Test/'
     image_dir = '/home/psm2208/data/GTDB/images/'
 
     training_pdf_names, total_math_char, gt_math_bbs, det_math_bbs, char_bbs = \
         read_data(training_pdf_names_list, gt_char_dir, gt_math_dir, detected_math_dir)
 
-    #char_level_eval(training_pdf_names, total_math_char, gt_math_bbs, det_math_bbs, char_bbs)
-    #box_level_granular_eval(training_pdf_names, total_math_char, gt_math_dir,
-    #                        detected_math_dir, gt_math_bbs, det_math_bbs, char_bbs)
+    char_level_eval(training_pdf_names, total_math_char, gt_math_bbs, det_math_bbs, char_bbs)
+
+    box_level_granular_eval(training_pdf_names, total_math_char, gt_math_dir,
+                            detected_math_dir, gt_math_bbs, det_math_bbs, char_bbs)
 
     find_merged_regions(training_pdf_names, gt_math_bbs, det_math_bbs)

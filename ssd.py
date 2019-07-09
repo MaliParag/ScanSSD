@@ -6,6 +6,8 @@ from layers import *
 import os
 import numpy as np
 
+base = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M', 512, 512, 512]
+
 class SSD(nn.Module):
     """Single Shot Multibox Architecture
     The network is composed of a base VGG network followed by the
@@ -183,60 +185,34 @@ def add_extras(cfg, size, i, batch_norm=False):
     return layers
 
 
-def multibox(vgg, extra_layers, cfg, size, num_classes):
+def multibox(args, vgg, extra_layers, cfg, size, num_classes):
     loc_layers = []
     conf_layers = []
 
     vgg_source = [21, -2]
-    #else:
-    #vgg_source = [24, -2]
 
     for k, v in enumerate(vgg_source):
-        loc_layers += [nn.Conv2d(vgg[v].out_channels,
-                                 cfg[k] * 4, kernel_size=3, padding=1)]
-        conf_layers += [nn.Conv2d(vgg[v].out_channels,
-                        cfg[k] * num_classes, kernel_size=3, padding=1)]
+        loc_layers += [nn.Conv2d(vgg[v].out_channels, cfg[k] * 4,
+                                 kernel_size=args.kernel, padding=args.padding)]
+        conf_layers += [nn.Conv2d(vgg[v].out_channels, cfg[k] * num_classes,
+                                  kernel_size=args.kernel, padding=args.padding)]
+
     for k, v in enumerate(extra_layers[1::2], 2):
-        loc_layers += [nn.Conv2d(v.out_channels, cfg[k]
-                                 * 4, kernel_size=3, padding=1)]
-        conf_layers += [nn.Conv2d(v.out_channels, cfg[k]
-                                  * num_classes, kernel_size=3, padding=1)]
+        loc_layers += [nn.Conv2d(v.out_channels, cfg[k] * 4,
+                                 kernel_size=args.kernel, padding=args.padding)]
+        conf_layers += [nn.Conv2d(v.out_channels, cfg[k] * num_classes,
+                                  kernel_size=args.kernel, padding=args.padding)]
+
     return vgg, extra_layers, (loc_layers, conf_layers)
-
-
-base = {
-    '4096': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-             512, 512, 512],
-    '2048': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-             512, 512, 512],
-    '1024': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-            512, 512, 512],
-    '512': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-            512, 512, 512],
-    '300': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-            512, 512, 512],
-}
-# extras = {
-#     '300': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
-#     '512': [],
-# }
-# mbox = {
-#     '300': [4, 6, 6, 6, 4, 4],  # number of boxes per feature map location
-#     '512': [],
-# }
-
 
 
 def build_ssd(args, phase, cfg, gpu_id, size=300, num_classes=21):
     if phase != "test" and phase != "train":
         print("ERROR: Phase: " + phase + " not recognized")
         return
-    # if size != 300:
-    #     print("ERROR: You specified size " + repr(size) + ". However, " +
-    #           "currently only SSD300 (size=300) is supported!")
-    #     return
-    #
-    base_, extras_, head_ = multibox(vgg(base[str(size)], 3, False),
+
+    base_, extras_, head_ = multibox(args,vgg(base, 3, False),
                                      add_extras(cfg, size, 1024),
                                      cfg['mbox'][str(size)], size, num_classes)
+
     return SSD(args, phase, cfg, size, base_, extras_, head_, num_classes, gpu_id)

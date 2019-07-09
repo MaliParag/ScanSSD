@@ -2,7 +2,6 @@ from __future__ import print_function
 import os
 import argparse
 import torch.backends.cudnn as cudnn
-from data import VOC_CLASSES as labelmap
 from data import *
 from ssd import build_ssd
 from math_detector import build_math_detector
@@ -17,7 +16,7 @@ parser.add_argument('--visual_threshold', default=0.6, type=float,
                     help='Final confidence threshold')
 parser.add_argument('--cuda', default=False, type=bool,
                     help='Use cuda to train model')
-parser.add_argument('--dataset_root', default=VOC_ROOT, help='Location of VOC root directory')
+parser.add_argument('--dataset_root', default=GTDB_ROOT, help='Location of VOC root directory')
 parser.add_argument('--type', default="test", help='Evaluate on test or train')
 parser.add_argument('--verbose', default=False, type=bool, help='plot output')
 parser.add_argument('--suffix', default="_10", type=str, help='suffix of directory of images for testing')
@@ -28,6 +27,12 @@ parser.add_argument('--use_char_info', default=False, type=bool, help='Whether o
 parser.add_argument('--limit', default=-1, type=int, help='limit on number of test examples')
 parser.add_argument('--cfg', default="gtdb", type=str,
                     help='Type of network: either gtdb or math_gtdb_512')
+parser.add_argument('--kernel', default="3 3", type=int, nargs='+',
+                    help='Kernel size for feature layers: 3 3 or 1 5')
+parser.add_argument('--padding', default="1 1", type=int, nargs='+',
+                    help='Padding for feature layers: 1 1 or 0 2')
+parser.add_argument('--neg_mining', default=True, type=bool,
+                    help='Whether or not to use hard negative mining with ratio 1:3')
 
 parser.add_argument('-f', default=None, type=str, help="Dummy arg so we can load in Jupyter Notebooks")
 
@@ -84,7 +89,7 @@ def test_net(args, net, gpu_id, testset, transform, thresh):
                 if pred_num == 0:
                     f.write('PREDICTIONS: '+'\n')
                 score = detections[0, i, j, 0]
-                label_name = labelmap[i-1]
+                label_name = 'math'
                 pt = (detections[0, i, j, 1:]*scale).cpu().numpy()
                 coords = (pt[0], pt[1], pt[2], pt[3])
 
@@ -102,28 +107,6 @@ def test_net(args, net, gpu_id, testset, transform, thresh):
 
     f.close()
 
-def test_voc():
-    # load net
-    num_classes = len(VOC_CLASSES) + 1 # +1 background
-
-    net = build_ssd(args, 'test', args.model_type, num_classes) # initialize SSD
-
-    net.load_state_dict(torch.load(args.trained_model))
-    net.eval()
-    print('Finished loading model!')
-
-    # load data
-    testset = VOCDetection(args.dataset_root, [('2007', 'test')], None, VOCAnnotationTransform())
-    if args.cuda:
-        net = net.cuda()
-        cudnn.benchmark = True
-
-    # evaluation
-    test_net(args.save_folder, net, args.cuda, testset,
-             BaseTransform(net.size, (104, 117, 123)),
-             thresh=args.visual_threshold)
-
-
 def test_gtdb():
 
     gpu_id = 0
@@ -134,10 +117,7 @@ def test_gtdb():
     # load net
     num_classes = 2 # +1 background
 
-    if args.cfg == 'gtdb':
-        net = build_ssd(args, 'test', gtdb, gpu_id, args.model_type, num_classes)  # initialize SSD
-    else:
-        net = build_math_detector(args, 'test', math_gtdb_512, gpu_id, args.model_type, num_classes)
+    net = build_ssd(args, 'test', gtdb, gpu_id, args.model_type, num_classes)  # initialize SSD
 
     print(net)
     net.to(gpu_id)

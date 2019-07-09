@@ -67,8 +67,16 @@ parser.add_argument('--type', default="processed_train", type=str,
                     help='Type of image set to use. This is list of file names, one per line')
 parser.add_argument('--use_char_info', default=False, type=str2bool,
                     help='Whether to use char position info and labels')
-parser.add_argument('--cfg', default="gtdb", type=str,
+parser.add_argument('--cfg', default="ssd512", type=str,
                     help='Type of network: either gtdb or math_gtdb_512')
+parser.add_argument('--loss_fun', default="fl", type=str,
+                    help='Type of loss: either fl (focal loss) or ce (cross entropy)')
+parser.add_argument('--kernel', default="3 3", type=int, nargs='+',
+                    help='Kernel size for feature layers: 3 3 or 1 5')
+parser.add_argument('--padding', default="1 1", type=int, nargs='+',
+                    help='Padding for feature layers: 1 1 or 0 2')
+parser.add_argument('--neg_mining', default=True, type=str2bool,
+                    help='Whether or not to use hard negative mining with ratio 1:3')
 
 args = parser.parse_args()
 
@@ -89,11 +97,7 @@ if not os.path.exists(args.save_folder):
 
 def train():
 
-    if args.cfg == 'gtdb':
-        cfg = gtdb
-    else:
-        cfg = math_gtdb_512
-
+    cfg = exp_cfg[args.cfg]
     dataset = GTDBDetection(args,
                             transform=SSDAugmentation(cfg['min_dim'],
                                                       MEANS))
@@ -109,10 +113,7 @@ def train():
         print('Using GPU with id ', gpu_id)
         torch.cuda.set_device(gpu_id)
 
-    if args.cfg == 'math_gtdb_512':
-        ssd_net = build_math_detector(args, 'train', cfg, gpu_id, cfg['min_dim'], cfg['num_classes'])
-    else:
-        ssd_net = build_ssd(args, 'train', cfg, gpu_id, cfg['min_dim'], cfg['num_classes'])
+    ssd_net = build_ssd(args, 'train', cfg, gpu_id, cfg['min_dim'], cfg['num_classes'])
 
     net = ssd_net
     print(net)
@@ -151,7 +152,7 @@ def train():
 
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)
-    criterion = MultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, 3, 0.5,
+    criterion = MultiBoxLoss(args, cfg['num_classes'], 0.5, 0, True, 3, 0.5,
                              False, args.cuda)
 
     net.train()
