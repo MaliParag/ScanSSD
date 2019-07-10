@@ -1,6 +1,8 @@
 # Sample command
-# python3 train.py --dataset GTDB --dataset_root /home/psm2208/data/GTDB/ --cuda True --visdom True
-# --batch_size 32 --num_workers 4 --layers_to_freeze 0 --save_folder weights_512 --model_type 512
+# python3 train.py --dataset GTDB --dataset_root /home/psm2208/data/GTDB/
+# --cuda True --visdom True --batch_size 16 --num_workers 8 --layers_to_freeze 0
+# --exp_name weights_1 --model_type 512 --suffix _512 --type processed_train_512
+# --cfg math_gtdb_512 --loss_fun fl --kernel 1 5 --padding 0 2 --neg_mining False
 
 from data import *
 from utils.augmentations import SSDAugmentation
@@ -8,7 +10,6 @@ from layers.modules import MultiBoxLoss
 from ssd import build_ssd
 import os
 import sys
-import time
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
@@ -19,6 +20,8 @@ import torch.utils.data as data
 import argparse
 from utils import helpers
 import logging
+import time
+import datetime
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -99,7 +102,8 @@ if not os.path.exists(args.exp_name):
 def train():
 
     cfg = exp_cfg[args.cfg]
-    dataset = GTDBDetection(args, transform=SSDAugmentation(cfg['min_dim'],MEANS))
+    dataset = GTDBDetection(args,
+                            transform=SSDAugmentation(cfg['min_dim'], mean=MEANS))
 
     if args.visdom:
         import visdom
@@ -201,10 +205,10 @@ def train():
 
         # load train data
         try:
-            images, targets = next(batch_iterator)
+            images, targets, _ = next(batch_iterator)
         except StopIteration:
              batch_iterator = iter(data_loader)
-             images, targets = next(batch_iterator)
+             images, targets, _ = next(batch_iterator)
 
         if args.cuda:
             images = images.cuda()
@@ -250,6 +254,7 @@ def train():
     torch.save(ssd_net.state_dict(),
                args.exp_name + '' + args.dataset + '.pth')
 
+    logging.debug("Final weights are saved at " + args.exp_name + '' + args.dataset + '.pth')
 
 def adjust_learning_rate(optimizer, gamma, step):
     """Sets the learning rate to the initial LR decayed by 10 at every
@@ -304,10 +309,19 @@ def update_vis_plot(iteration, loc, viz, conf, window1, window2, update_type,
 
 if __name__ == '__main__':
     #os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-    filepath=os.path.join(args.log_dir, args.exp_name + "_" + str(round(time.time())) + ".log")
-    print('Logging to ' + filepath)
-    logging.basicConfig(filename=filepath,
-                        filemode='w', format='%(process)d - %(asctime)s - %(message)s',
-                        datefmt='%d-%b-%y %H:%M:%S', level=logging.DEBUG)
+    start = time.time()
 
-    train()
+    try:
+        filepath=os.path.join(args.log_dir, args.exp_name + "_" + str(round(time.time())) + ".log")
+        print('Logging to ' + filepath)
+        logging.basicConfig(filename=filepath,
+                            filemode='w', format='%(process)d - %(asctime)s - %(message)s',
+                            datefmt='%d-%b-%y %H:%M:%S', level=logging.DEBUG)
+
+        train()
+    except Exception as e:
+        logging.error("Exception occurred", exc_info=True)
+
+    end = time.time()
+    logging.debug('Toal time taken ' + str(datetime.timedelta(seconds=end - start)))
+    logging.debug("Training done!")

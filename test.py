@@ -2,9 +2,15 @@ from __future__ import print_function
 import os
 import argparse
 import torch.backends.cudnn as cudnn
-from data import *
 from ssd import build_ssd
 from utils import draw_boxes, helpers, save_boxes
+import logging
+import time
+import datetime
+from torch.autograd import Variable
+from torchvision import datasets, transforms
+from torch.utils.data import Dataset, DataLoader
+from data import *
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')
 parser.add_argument('--trained_model', default='weights/ssd300_GTDB_990.pth',
@@ -30,8 +36,12 @@ parser.add_argument('--kernel', default="3 3", type=int, nargs='+',
                     help='Kernel size for feature layers: 3 3 or 1 5')
 parser.add_argument('--padding', default="1 1", type=int, nargs='+',
                     help='Padding for feature layers: 1 1 or 0 2')
-parser.add_argument('--neg_mining', default=True, type=bool,
-                    help='Whether or not to use hard negative mining with ratio 1:3')
+parser.add_argument('--log_dir', default="logs", type=str,
+                    help='dir to save the logs')
+parser.add_argument('--batch_size', default=16, type=int,
+                    help='Batch size for training')
+parser.add_argument('--num_workers', default=4, type=int,
+                    help='Number of workers used in data loading')
 
 parser.add_argument('-f', default=None, type=str, help="Dummy arg so we can load in Jupyter Notebooks")
 
@@ -59,7 +69,7 @@ def test_net(args, net, gpu_id, testset, transform, thresh):
         num_images = args.limit
 
     for i in range(num_images):
-        print('Testing image {:d}/{:d}....'.format(i+1, num_images))
+        logging.debug('Testing image {:d}/{:d}....'.format(i+1, num_images))
         img = testset.pull_image(i)
         img_id, annotation = testset.pull_anno(i, 'test')
         x = torch.from_numpy(transform(img)[0]).permute(2, 0, 1)
@@ -81,7 +91,8 @@ def test_net(args, net, gpu_id, testset, transform, thresh):
         recognized_boxes = []
         recognized_scores = []
 
-        #[1,2,200,5] -> 1 is number of classes, 200 is top_k, 5 is bounding box with class label,
+        #[1,2,200,5] -> 1 is number of images, 2 is number of classes,
+        # 200 is top_k, 5 is bounding box with class confidence,
         for i in range(detections.size(1)):
             j = 0
             while j < detections.size(2) and detections[0, i, j, 0] >= thresh: #TODO it was 0.6
@@ -101,10 +112,85 @@ def test_net(args, net, gpu_id, testset, transform, thresh):
                 j += 1
 
         save_boxes(args, recognized_boxes, recognized_scores, img_id)
-        if args.verbose:
-            draw_boxes(args, img, recognized_boxes, debug_boxes, debug_scores, scale, img_id)
+        if args.verbose:#TODO bug in using debug boxes and score for getting heatmap
+            draw_boxes(args, img, recognized_boxes, recognized_scores,
+                       debug_boxes, debug_scores, scale, img_id)
 
     f.close()
+
+
+def test_net_batch(args, net, gpu_id, testset, transform, thresh):
+    # dump predictions and assoc. ground truth to text file for now
+
+    num_images = len(testset)
+
+    if args.limit != -1:
+        num_images = args.limit
+
+    dataset = GTDBDetection(args,
+                            transform=BaseTransform(args.model_type, mean=MEANS))
+
+    data_loader = DataLoader(dataset, args.batch_size,
+                              num_workers=args.num_workers,
+                              shuffle=False, collate_fn=detection_collate,
+                              pin_memory=True)
+    # create batch iterator
+    #batch_iterator = iter(data_loader)
+    total = len(dataset)
+    done = 0
+    for batch_idx, (images, targets, ids) in enumerate(data_loader):
+
+        done = done + len(images)
+        logging.debug('processing {}/{}'.format(done, total))
+
+        if args.cuda:
+            images = images.cuda()
+            targets = [ann.cuda() for ann in targets]
+        else:
+            images = Variable(images)
+            targets = [Variable(ann, volatile=True) for ann in targets]
+
+        y, debug_boxes, debug_scores = net(images)  # forward pass
+        detections = y.data
+
+        k = 0
+        for img, img_id in zip(images, ids):
+            img = img.permute(1,2,0)
+            # scale each detection back up to the image
+            scale = torch.Tensor([img.shape[1], img.shape[0],
+                                  img.shape[1], img.shape[0]])
+
+            recognized_boxes = []
+            recognized_scores = []
+
+            # [1,2,200,5]
+            # we only care about math class
+            # hence select detections[image_id, class, detection_id, detection_score]
+            # class=1 for math
+            i = 1
+            j = 0
+
+            while j < detections.size(2) and detections[k, i, j, 0] >= thresh:  # TODO it was 0.6
+
+                score = detections[k, i, j, 0]
+                pt = (detections[k, i, j, 1:] * scale).cpu().numpy()
+                coords = (pt[0], pt[1], pt[2], pt[3])
+
+                recognized_boxes.append(coords)
+                recognized_scores.append(score.cpu().numpy())
+
+                j += 1
+
+
+            #logging.debug('Saving ' + img_id)
+            save_boxes(args, recognized_boxes, recognized_scores, img_id)
+            k = k + 1
+
+            if args.verbose:
+                draw_boxes(args, img.cpu().numpy(), recognized_boxes, recognized_scores,
+                           debug_boxes, debug_scores, scale, img_id)
+
+
 
 def test_gtdb():
 
@@ -116,15 +202,15 @@ def test_gtdb():
     # load net
     num_classes = 2 # +1 background
 
-    net = build_ssd(args, 'test', gtdb, gpu_id, args.model_type, num_classes)  # initialize SSD
+    net = build_ssd(args, 'test', exp_cfg[args.cfg], gpu_id, args.model_type, num_classes)  # initialize SSD
 
-    print(net)
+    logging.debug(net)
     net.to(gpu_id)
 
     # TODO: should remove map_location argument
     net.load_state_dict(torch.load(args.trained_model, map_location={'cuda:0':'cuda:1'}))
     net.eval()
-    print('Finished loading model!')
+    logging.debug('Finished loading model!')
 
     #testset = GTDBDetection(args.dataset_root, 'processed_train', None, GTDBAnnotationTransform())
     testset = GTDBDetection(args, None, GTDBAnnotationTransform())
@@ -134,13 +220,31 @@ def test_gtdb():
         cudnn.benchmark = True
 
     # evaluation
-    test_net(args, net, gpu_id, testset,
-             BaseTransform(net.size, (104, 117, 123)),
-             thresh=args.visual_threshold)
+    test_net_batch(args, net, gpu_id, testset,
+                   BaseTransform(net.size, (246,246,246)),
+                   thresh=args.visual_threshold)
+    # test_net(args, net, gpu_id, testset,
+    #          BaseTransform(net.size, (246, 246, 246)),
+    #          thresh=args.visual_threshold)
 
 
 if __name__ == '__main__':
     #test_voc()
     #os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     #torch.cuda.set_device(1)
-    test_gtdb()
+    start = time.time()
+    try:
+        filepath=os.path.join(args.log_dir, args.exp_name + "_" + str(round(time.time())) + ".log")
+        print('Logging to ' + filepath)
+        logging.basicConfig(filename=filepath,
+                            filemode='w', format='%(process)d - %(asctime)s - %(message)s',
+                            datefmt='%d-%b-%y %H:%M:%S', level=logging.DEBUG)
+
+        test_gtdb()
+    except Exception as e:
+        logging.error("Exception occurred", exc_info=True)
+
+    end = time.time()
+    logging.debug('Toal time taken ' + str(datetime.timedelta(seconds=end-start)))
+    logging.debug("Testing done!")
+

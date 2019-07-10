@@ -119,6 +119,9 @@ def draw_boxes_cv(image, recognized_boxes, gt_boxes, outpath):
 
 def save_boxes(args, recognized_boxes, recognized_scores, img_id):
 
+    if len(recognized_scores) < 1 and len(recognized_boxes) < 1:
+        return
+
     path = os.path.join("eval", args.exp_name, img_id + ".png")
     math_csv_path = os.path.join("eval", args.exp_name, img_id + ".csv")
 
@@ -127,39 +130,49 @@ def save_boxes(args, recognized_boxes, recognized_scores, img_id):
 
     math_output = open(math_csv_path, 'w')
 
-    for i, box in enumerate(recognized_boxes):
-        math_output.write(str(box[0]) + ',' + str(box[1]) + ',' + str(box[2]) + ',' +
-                          str(box[3]) + ',' + str(recognized_scores[i]) + '\n')
+    final_op = np.concatenate((recognized_boxes,np.transpose([recognized_scores])),axis=1)
 
+    np.savetxt(math_csv_path, final_op, fmt='%.2f', delimiter=',')
     math_output.close()
 
+    #
+    #
+    # for i, box in enumerate(recognized_boxes):
+    #     math_output.write(str(box[0]) + ',' + str(box[1]) + ',' + str(box[2]) + ',' +
+    #                       str(box[3]) + ',' + str(recognized_scores[i]) + '\n')
+    #
 
-def draw_boxes(args, im, recognized_boxes, boxes, confs, scale, img_id):
+def draw_boxes(args, im, recognized_boxes, recognized_scores, boxes, confs, scale, img_id):
 
     path = os.path.join("eval", args.exp_name, img_id + ".png")
 
     if not os.path.exists(os.path.dirname(path)):
         os.makedirs(os.path.dirname(path))
 
-    if args.verbose:
-        # Create figure and axes
-        fig,ax = plt.subplots(1)
-        scale = scale.cpu().numpy()
+    # Create figure and axes
+    fig,ax = plt.subplots(1)
+    scale = scale.cpu().numpy()
 
-        # TODO: Added for debugging. Assuming all dimensions scale factor is same
-        boxes = boxes.cpu().numpy() * scale[0]
-        confs = confs.cpu().numpy().reshape(-1, 1)
-        data = np.append(boxes, confs, 1)
+    # TODO: Added for debugging. Assuming all dimensions scale factor is same
+    # For debug heatmap
+    #boxes = boxes.cpu().numpy() * scale[0]
+    #confs = confs.cpu().numpy().reshape(-1, 1)
+    #data = np.append(boxes, confs, 1)
 
-        # sort based on the confs. Confs is column 4
-        data = data[data[:,4].argsort()]
+    # sort based on the confs. Confs is column 4
+    # data = data[data[:,4].argsort()]
 
-        # Display the image
-        ax.imshow(im)
+    # Display the image
+    ax.imshow(im)
 
-        width, height, channels = im.shape
-        heatmap = np.zeros([width, height])
+    width, height, channels = im.shape
+    heatmap = np.zeros([width, height])
 
+    if len(recognized_scores) > 1 and len(recognized_boxes) > 1:
+
+        # Recognition heatmap
+        data = np.concatenate((recognized_boxes,np.transpose([recognized_scores])),axis=1)
+        data = data[data[:, 4].argsort()]
 
         for box in data:
             heatmap[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = box[4]
@@ -170,19 +183,19 @@ def draw_boxes(args, im, recognized_boxes, boxes, confs, scale, img_id):
             #Add the patch to the Axes
             ax.add_patch(rect)
 
-        # Following line makes sure that all the heatmaps are in the scale, 0 to 1
-        # So color assigned to different scores are consistent across heatmaps for
-        # different images
-        heatmap[0:1, 0:1] = 1
-        heatmap[0:1, 1:2] = 0
+    # Following line makes sure that all the heatmaps are in the scale, 0 to 1
+    # So color assigned to different scores are consistent across heatmaps for
+    # different images
+    heatmap[0:1, 0:1] = 1
+    heatmap[0:1, 1:2] = 0
 
-        plt.imshow(heatmap, alpha=0.4, cmap='hot', interpolation='nearest')
-        plt.colorbar()
+    plt.imshow(heatmap, alpha=0.4, cmap='hot', interpolation='nearest')
+    plt.colorbar()
 
-        plt.title(args.exp_name)
-        plt.show()
-        plt.savefig(path, dpi=600)
-        plt.close()
+    plt.title(args.exp_name)
+    plt.show()
+    plt.savefig(path, dpi=600)
+    plt.close()
 
 
 if __name__ == "__main__":

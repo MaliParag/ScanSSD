@@ -417,7 +417,7 @@ class SSDAugmentation(object):
             #RandomMirror(),
             ToPercentCoords(),
             Resize(self.size),
-            #SubtractMeans(self.mean)
+            SubtractMeans(self.mean)
         ])
 
     def __call__(self, img, boxes, labels):

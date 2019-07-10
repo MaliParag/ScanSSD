@@ -85,8 +85,8 @@ class GTDBDetection(data.Dataset):
             self.ids.append((self.root, line.strip()))
 
     def __getitem__(self, index):
-        im, gt, h, w = self.pull_item(index)
-        return im, gt
+        im, gt, h, w, img_id = self.pull_item(index)
+        return im, gt, img_id[1]
 
     def __len__(self):
         return len(self.ids)
@@ -150,7 +150,7 @@ class GTDBDetection(data.Dataset):
             # img = img.transpose(2, 0, 1)
             target = np.hstack((boxes, np.expand_dims(labels, axis=1)))
 
-        return torch.from_numpy(img).permute(2, 0, 1), target, height, width
+        return torch.from_numpy(img).permute(2, 0, 1), target, height, width, img_id
         # return torch.from_numpy(img), target, height, width
 
     def pull_image(self, index):
