@@ -29,22 +29,20 @@ class MultiBoxLoss(nn.Module):
         See: https://arxiv.org/pdf/1512.02325.pdf for more details.
     """
 
-    def __init__(self, args, cfg, overlap_thresh, prior_for_matching,
-                 bkg_label, neg_pos, neg_overlap, encode_target,
-                 use_gpu=True):
+    def __init__(self, args, cfg, overlap_thresh, bkg_label, neg_pos):
+
         super(MultiBoxLoss, self).__init__()
         self.args = args
-        self.use_gpu = use_gpu
         self.num_classes = cfg['num_classes']
         self.threshold = overlap_thresh
         self.background_label = bkg_label
-        self.encode_target = encode_target
-        self.use_prior_for_matching = prior_for_matching
-        self.do_neg_mining = args.neg_mining
         self.negpos_ratio = neg_pos
-        self.neg_overlap = neg_overlap
         self.variance = cfg['variance']
         self.focal_loss = FocalLoss()
+        # self.neg_overlap = neg_overlap
+        # self.encode_target = encode_target
+        # self.use_prior_for_matching = prior_for_matching
+        # self.do_neg_mining = args.neg_mining
 
     def forward(self, predictions, targets):
         """Multibox Loss
@@ -67,15 +65,18 @@ class MultiBoxLoss(nn.Module):
         # match priors (default boxes) and ground truth boxes
         loc_t = torch.Tensor(num, num_priors, 4)
         conf_t = torch.LongTensor(num, num_priors)
+
         for idx in range(num):
             truths = targets[idx][:, :-1].data
             labels = targets[idx][:, -1].data
             defaults = priors.data
             match(self.threshold, truths, defaults, self.variance, labels,
                   loc_t, conf_t, idx)
-        if self.use_gpu:
+
+        if self.args.cuda:
             loc_t = loc_t.cuda()
             conf_t = conf_t.cuda()
+
         # wrap targets
         loc_t = Variable(loc_t, requires_grad=False)
         conf_t = Variable(conf_t, requires_grad=False)
@@ -99,7 +100,7 @@ class MultiBoxLoss(nn.Module):
         loss_c = log_sum_exp(batch_conf) - batch_conf.gather(1, conf_t.view(-1, 1))
 
         # Hard Negative Mining
-        if self.do_neg_mining:
+        if self.args.neg_mining:
             loss_c = loss_c.view(pos.size()[0], pos.size()[1])
             loss_c = loss_c.view(num, -1)
             loss_c[pos] = 0  # filter out pos boxes for now

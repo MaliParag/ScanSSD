@@ -16,9 +16,9 @@ import torch.optim as optim
 import torch.backends.cudnn as cudnn
 import torch.nn.init as init
 import torch.utils.data as data
-import numpy as np
 import argparse
 from utils import helpers
+import logging
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -54,8 +54,8 @@ parser.add_argument('--gamma', default=0.1, type=float,
                     help='Gamma update for SGD')
 parser.add_argument('--visdom', default=False, type=bool,
                     help='Use visdom for loss visualization')
-parser.add_argument('--save_folder', default='weights/',
-                    help='Directory for saving checkpoint models')
+parser.add_argument('--exp_name', default='math_detector', # changed to exp_name from --save_folder
+                    help='It is the name of the experiment. Weights are saved in the directory with same name.')
 parser.add_argument('--layers_to_freeze', default=20, type=float,
                     help='Number of VGG16 layers to freeze')
 parser.add_argument('--model_type', default=300, type=int,
@@ -76,6 +76,8 @@ parser.add_argument('--padding', default="1 1", type=int, nargs='+',
                     help='Padding for feature layers: 1 1 or 0 2')
 parser.add_argument('--neg_mining', default=True, type=bool,
                     help='Whether or not to use hard negative mining with ratio 1:3')
+parser.add_argument('--log_dir', default="logs", type=str,
+                    help='dir to save the logs')
 
 args = parser.parse_args()
 
@@ -84,22 +86,20 @@ if torch.cuda.is_available():
     if args.cuda:
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
     if not args.cuda:
-        print("WARNING: It looks like you have a CUDA device, but aren't " +
-              "using CUDA.\nRun with --cuda for optimal training speed.")
+        logging.warning("WARNING: It looks like you have a CUDA device, but aren't " +
+                        "using CUDA.\nRun with --cuda for optimal training speed.")
         torch.set_default_tensor_type('torch.FloatTensor')
 else:
     torch.set_default_tensor_type('torch.FloatTensor')
 
-if not os.path.exists(args.save_folder):
-    os.mkdir(args.save_folder)
+if not os.path.exists(args.exp_name):
+    os.mkdir(args.exp_name)
 
 
 def train():
 
     cfg = exp_cfg[args.cfg]
-    dataset = GTDBDetection(args,
-                            transform=SSDAugmentation(cfg['min_dim'],
-                                                      MEANS))
+    dataset = GTDBDetection(args, transform=SSDAugmentation(cfg['min_dim'],MEANS))
 
     if args.visdom:
         import visdom
@@ -109,13 +109,13 @@ def train():
 
     if args.cuda:
         gpu_id = helpers.get_freer_gpu()
-        print('Using GPU with id ', gpu_id)
+        logging.debug('Using GPU with id ' + str(gpu_id))
         torch.cuda.set_device(gpu_id)
 
     ssd_net = build_ssd(args, 'train', cfg, gpu_id, cfg['min_dim'], cfg['num_classes'])
 
     net = ssd_net
-    print(net)
+    logging.debug(net)
 
     ct = 0
     # freeze first few layers
@@ -132,18 +132,18 @@ def train():
         cudnn.benchmark = True
 
     if args.resume:
-        print('Resuming training, loading {}...'.format(args.resume))
+        logging.debug('Resuming training, loading {}...'.format(args.resume))
         ssd_net.load_weights(args.resume)
     else:
         vgg_weights = torch.load("base_weights/" + args.basenet)
-        print('Loading base network...')
+        logging.debug('Loading base network...')
         ssd_net.vgg.load_state_dict(vgg_weights)
 
     # if args.cuda:
     #     net = net.cuda()
 
     if not args.resume:
-        print('Initializing weights...')
+        logging.debug('Initializing weights...')
         # initialize newly added layers' weights with xavier method
         ssd_net.extras.apply(weights_init)
         ssd_net.loc.apply(weights_init)
@@ -151,8 +151,9 @@ def train():
 
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)
-    criterion = MultiBoxLoss(args, cfg, 0.5, 0, True, 3, 0.5,
-                             False, args.cuda)
+
+    #args, cfg, overlap_thresh, bkg_label, neg_pos
+    criterion = MultiBoxLoss(args, cfg, 0.5, 0, 3)
 
     net.train()
     # loss counters
@@ -160,18 +161,18 @@ def train():
     conf_loss = 0
     min_total_loss = float('inf')
     epoch = 0
-    print('Loading the dataset...')
+    logging.debug('Loading the dataset...')
 
     epoch_size = len(dataset) // args.batch_size
-    print('Training SSD on:', dataset.name)
-    print('Using the specified args:')
-    print(args)
+    logging.debug('Training SSD on:' + dataset.name)
+    logging.debug('Using the specified args:')
+    logging.debug(args)
 
     step_index = 0
 
     if args.visdom:
-        vis_title = 'SSD ' + str(args.model_type) + ' on ' + dataset.name
-        vis_legend = ['Loc Loss', 'Conf Loss', 'Total Loss']
+        vis_title = args.exp_name
+        vis_legend = ['Location Loss', 'Confidence Loss', 'Total Loss']
         iter_plot = create_vis_plot('Iteration', 'Loss', viz, vis_title, vis_legend)
         epoch_plot = create_vis_plot('Epoch', 'Loss', viz, vis_title, vis_legend)
 
@@ -204,11 +205,8 @@ def train():
         except StopIteration:
              batch_iterator = iter(data_loader)
              images, targets = next(batch_iterator)
-        #images, targets = next(batch_iterator)
 
         if args.cuda:
-            #images = Variable(images.cuda())
-            #targets = [Variable(ann.cuda(), volatile=True) for ann in targets]
             images = images.cuda()
             targets = [ann.cuda() for ann in targets]
         else:
@@ -228,29 +226,29 @@ def train():
         t1 = time.time()
 
         if iteration % 10 == 0:
-            print('timer: %.4f sec.' % (t1 - t0))
-            print('iter ' + repr(iteration) + ' || Loss: %.4f ||' % (loss.item()), end=' ')
+            logging.debug('timer: %.4f sec.' % (t1 - t0))
+            logging.debug('iter ' + repr(iteration) + ' || Loss: %.4f ||' % (loss.item()))
 
         if args.visdom:
             update_vis_plot(iteration, loss_l.item(), viz, loss_c.item(),
                             iter_plot, epoch_plot, 'append')
 
         if iteration != 0 and iteration % 50 == 0:
-            print('Saving state, iter:', iteration)
+            logging.debug('Saving state, iter:' + str(iteration))
             torch.save(ssd_net.state_dict(),
                        os.path.join(
-                        args.save_folder, 'ssd' + str(args.model_type) + args.dataset +
+                        args.exp_name, 'ssd' + str(args.model_type) + args.dataset +
                         repr(iteration) + '.pth'))
 
         elif loss.item() < min_total_loss:
             min_total_loss = loss.item()
             torch.save(ssd_net.state_dict(),
                        os.path.join(
-                           args.save_folder, 'best_ssd' + str(args.model_type) + args.dataset +
+                           args.exp_name, 'best_ssd' + str(args.model_type) + args.dataset +
                            repr(iteration) + '.pth'))
 
     torch.save(ssd_net.state_dict(),
-               args.save_folder + '' + args.dataset + '.pth')
+               args.exp_name + '' + args.dataset + '.pth')
 
 
 def adjust_learning_rate(optimizer, gamma, step):
@@ -306,4 +304,10 @@ def update_vis_plot(iteration, loc, viz, conf, window1, window2, update_type,
 
 if __name__ == '__main__':
     #os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+    filepath=os.path.join(args.log_dir, args.exp_name + "_" + str(round(time.time())) + ".log")
+    print('Logging to ' + filepath)
+    logging.basicConfig(filename=filepath,
+                        filemode='w', format='%(process)d - %(asctime)s - %(message)s',
+                        datefmt='%d-%b-%y %H:%M:%S', level=logging.DEBUG)
+
     train()
