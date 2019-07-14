@@ -932,8 +932,8 @@ if __name__ == '__main__':
         visualize = 0
         projections = 0
 
-    final_width = 512
-    final_height = 512
+    final_width = 300
+    final_height = 300
 
     home_data = "/home/psm2208/data/GTDB/"
     home_eval = "/home/psm2208/code/eval/"

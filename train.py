@@ -81,6 +81,10 @@ parser.add_argument('--neg_mining', default=True, type=bool,
                     help='Whether or not to use hard negative mining with ratio 1:3')
 parser.add_argument('--log_dir', default="logs", type=str,
                     help='dir to save the logs')
+parser.add_argument('--stride', default=0.1, type=float,
+                    help='Stride to use for sliding window')
+parser.add_argument('--window', default=1200, type=int,
+                    help='Sliding window size')
 
 args = parser.parse_args()
 
@@ -95,8 +99,8 @@ if torch.cuda.is_available():
 else:
     torch.set_default_tensor_type('torch.FloatTensor')
 
-if not os.path.exists(args.exp_name):
-    os.mkdir(args.exp_name)
+if not os.path.exists("weights_" + args.exp_name):
+    os.mkdir("weights_" + args.exp_name)
 
 
 def train():
@@ -237,19 +241,25 @@ def train():
             update_vis_plot(iteration, loss_l.item(), viz, loss_c.item(),
                             iter_plot, epoch_plot, 'append')
 
-        if iteration != 0 and iteration % 50 == 0:
+        if iteration != 0 and iteration % 1000 == 0:
             logging.debug('Saving state, iter:' + str(iteration))
             torch.save(ssd_net.state_dict(),
                        os.path.join(
-                        args.exp_name, 'ssd' + str(args.model_type) + args.dataset +
+                        'weights_' + args.exp_name, 'ssd' + str(args.model_type) + args.dataset +
                         repr(iteration) + '.pth'))
 
         elif loss.item() < min_total_loss:
             min_total_loss = loss.item()
             torch.save(ssd_net.state_dict(),
                        os.path.join(
-                           args.exp_name, 'best_ssd' + str(args.model_type) + args.dataset +
+                           'weights_' + args.exp_name, 'best_ssd' + str(args.model_type) + args.dataset +
                            repr(iteration) + '.pth'))
+
+        if (iteration % epoch_size == 0):
+            torch.save(ssd_net.state_dict(),
+                       os.path.join(
+                           'weights_' + args.exp_name, 'epoch_ssd' + str(args.model_type) + args.dataset +
+                           repr(epoch+1) + '.pth'))
 
     torch.save(ssd_net.state_dict(),
                args.exp_name + '' + args.dataset + '.pth')
@@ -323,5 +333,5 @@ if __name__ == '__main__':
         logging.error("Exception occurred", exc_info=True)
 
     end = time.time()
-    logging.debug('Toal time taken ' + str(datetime.timedelta(seconds=end - start)))
+    logging.debug('Total time taken ' + str(datetime.timedelta(seconds=end - start)))
     logging.debug("Training done!")

@@ -39,6 +39,7 @@ def draw_stitched_boxes(im, data, outpath):
     plt.savefig(outpath, dpi=600)
     plt.close()
 
+
 def draw_all_boxes(im, data, recognized_boxes, gt_boxes, outpath):
 
     if len(data) == 0:

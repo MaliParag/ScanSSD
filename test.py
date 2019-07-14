@@ -56,66 +56,66 @@ if not os.path.exists(args.save_folder):
     os.mkdir(args.save_folder)
 
 
-def test_net(args, net, gpu_id, testset, transform, thresh):
-    # dump predictions and assoc. ground truth to text file for now
-    filename = args.save_folder + 'detection_output.txt'
-    if os.path.isfile(filename):
-        os.remove(filename)
-
-    num_images = len(testset)
-    f = open(filename, "w")
-
-    if args.limit != -1:
-        num_images = args.limit
-
-    for i in range(num_images):
-        logging.debug('Testing image {:d}/{:d}....'.format(i+1, num_images))
-        img = testset.pull_image(i)
-        img_id, annotation = testset.pull_anno(i, 'test')
-        x = torch.from_numpy(transform(img)[0]).permute(2, 0, 1)
-        x = x.unsqueeze(0)
-
-        f.write('\nFOR: '+img_id+'\n')
-        for box in annotation:
-            f.write('label: '+' || '.join(str(b) for b in box)+'\n')
-        if args.cuda:
-            x = x.to(gpu_id)
-
-        y, debug_boxes, debug_scores = net(x)      # forward pass
-        detections = y.data
-        # scale each detection back up to the image
-        scale = torch.Tensor([img.shape[1], img.shape[0],
-                             img.shape[1], img.shape[0]])
-        pred_num = 0
-
-        recognized_boxes = []
-        recognized_scores = []
-
-        #[1,2,200,5] -> 1 is number of images, 2 is number of classes,
-        # 200 is top_k, 5 is bounding box with class confidence,
-        for i in range(detections.size(1)):
-            j = 0
-            while j < detections.size(2) and detections[0, i, j, 0] >= thresh: #TODO it was 0.6
-                if pred_num == 0:
-                    f.write('PREDICTIONS: '+'\n')
-                score = detections[0, i, j, 0]
-                label_name = 'math'
-                pt = (detections[0, i, j, 1:]*scale).cpu().numpy()
-                coords = (pt[0], pt[1], pt[2], pt[3])
-
-                recognized_boxes.append(coords)
-                recognized_scores.append(score.cpu().numpy())
-
-                pred_num += 1
-                f.write(str(pred_num)+' label: '+label_name+' score: ' +
-                        str(score) + ' '+' || '.join(str(c) for c in coords) + '\n')
-                j += 1
-
-        save_boxes(args, recognized_boxes, recognized_scores, img_id)
-        if args.verbose:#TODO bug in using debug boxes and score for getting heatmap
-            draw_boxes(args, img, recognized_boxes, recognized_scores,
-                       debug_boxes, debug_scores, scale, img_id)
-
+# def test_net(args, net, gpu_id, testset, transform, thresh):
+#     # dump predictions and assoc. ground truth to text file for now
+#     filename = args.save_folder + 'detection_output.txt'
+#     if os.path.isfile(filename):
+#         os.remove(filename)
+#
+#     num_images = len(testset)
+#     f = open(filename, "w")
+#
+#     if args.limit != -1:
+#         num_images = args.limit
+#
+#     for i in range(num_images):
+#         logging.debug('Testing image {:d}/{:d}....'.format(i+1, num_images))
+#         img = testset.pull_image(i)
+#         img_id, annotation = testset.pull_anno(i, 'test')
+#         x = torch.from_numpy(transform(img)[0]).permute(2, 0, 1)
+#         x = x.unsqueeze(0)
+#
+#         f.write('\nFOR: '+img_id+'\n')
+#         for box in annotation:
+#             f.write('label: '+' || '.join(str(b) for b in box)+'\n')
+#         if args.cuda:
+#             x = x.to(gpu_id)
+#
+#         y, debug_boxes, debug_scores = net(x)      # forward pass
+#         detections = y.data
+#         # scale each detection back up to the image
+#         scale = torch.Tensor([img.shape[1], img.shape[0],
+#                              img.shape[1], img.shape[0]])
+#         pred_num = 0
+#
+#         recognized_boxes = []
+#         recognized_scores = []
+#
+#         #[1,2,200,5] -> 1 is number of images, 2 is number of classes,
+#         # 200 is top_k, 5 is bounding box with class confidence,
+#         for i in range(detections.size(1)):
+#             j = 0
+#             while j < detections.size(2) and detections[0, i, j, 0] >= thresh: #TODO it was 0.6
+#                 if pred_num == 0:
+#                     f.write('PREDICTIONS: '+'\n')
+#                 score = detections[0, i, j, 0]
+#                 label_name = 'math'
+#                 pt = (detections[0, i, j, 1:]*scale).cpu().numpy()
+#                 coords = (pt[0], pt[1], pt[2], pt[3])
+#
+#                 recognized_boxes.append(coords)
+#                 recognized_scores.append(score.cpu().numpy())
+#
+#                 pred_num += 1
+#                 f.write(str(pred_num)+' label: '+label_name+' score: ' +
+#                         str(score) + ' '+' || '.join(str(c) for c in coords) + '\n')
+#                 j += 1
+#
+#         save_boxes(args, recognized_boxes, recognized_scores, img_id)
+#         if args.verbose:#TODO bug in using debug boxes and score for getting heatmap
+#             draw_boxes(args, img, recognized_boxes, recognized_scores,
+#                        debug_boxes, debug_scores, scale, img_id)
+#
     f.close()
 
 

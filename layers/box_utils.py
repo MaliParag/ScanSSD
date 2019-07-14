@@ -134,7 +134,7 @@ def encode(matched, priors, variances):
 
     # When g_wh goes to 0, -inf is returned and we get inf loss in the end
     # to avoid that, replacing 0 with 0.0000001
-    g_wh[g_wh == 0] = 0.0000001
+    g_wh[g_wh == 0] = 1e-10
 
     g_wh = torch.log(g_wh) / variances[1]
 
