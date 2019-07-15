@@ -65,8 +65,10 @@ parser.add_argument('--model_type', default=300, type=int,
                     help='Type of ssd model, ssd300 or ssd512')
 parser.add_argument('--suffix', default="_10", type=str,
                     help='Stride % used while generating images or dpi from which images was generated or some other identifier')
-parser.add_argument('--type', default="processed_train", type=str,
-                    help='Type of image set to use. This is list of file names, one per line')
+parser.add_argument('--training_data', default="training_data", type=str,
+                    help='Training data to use. This is list of file names, one per line')
+parser.add_argument('--validation_data', default="validation_data", type=str,
+                    help='Validation data to use. This is list of file names, one per line')
 parser.add_argument('--use_char_info', default=False, type=bool,
                     help='Whether to use char position info and labels')
 parser.add_argument('--cfg', default="ssd512", type=str,
@@ -106,7 +108,7 @@ if not os.path.exists("weights_" + args.exp_name):
 def train():
 
     cfg = exp_cfg[args.cfg]
-    dataset = GTDBDetection(args,
+    dataset = GTDBDetection(args, args.training_data, split='train',
                             transform=SSDAugmentation(cfg['min_dim'], mean=MEANS))
 
     if args.visdom:
@@ -122,12 +124,11 @@ def train():
 
     ssd_net = build_ssd(args, 'train', cfg, gpu_id, cfg['min_dim'], cfg['num_classes'])
 
-    net = ssd_net
-    logging.debug(net)
+    logging.debug(ssd_net)
 
     ct = 0
     # freeze first few layers
-    for child in net.vgg.children():
+    for child in ssd_net.vgg.children():
         if ct >= args.layers_to_freeze:
             break
 
@@ -136,7 +137,7 @@ def train():
 
     if args.cuda:
         #net = torch.nn.DataParallel(ssd_net)
-        net = net.to(gpu_id)
+        ssd_net = ssd_net.to(gpu_id)
         cudnn.benchmark = True
 
     if args.resume:
@@ -157,13 +158,13 @@ def train():
         ssd_net.loc.apply(weights_init)
         ssd_net.conf.apply(weights_init)
 
-    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
+    optimizer = optim.SGD(ssd_net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)
 
     #args, cfg, overlap_thresh, bkg_label, neg_pos
     criterion = MultiBoxLoss(args, cfg, 0.5, 0, 3)
 
-    net.train()
+    ssd_net.train()
     # loss counters
     loc_loss = 0
     conf_loss = 0
@@ -181,27 +182,24 @@ def train():
     if args.visdom:
         vis_title = args.exp_name
         vis_legend = ['Location Loss', 'Confidence Loss', 'Total Loss']
-        iter_plot = create_vis_plot('Iteration', 'Loss', viz, vis_title, vis_legend)
-        epoch_plot = create_vis_plot('Epoch', 'Loss', viz, vis_title, vis_legend)
+        iter_plot = create_vis_plot('Iteration', 'Loss', viz, 'Training ' + vis_title, vis_legend)
+        epoch_plot = create_vis_plot('Epoch', 'Loss', viz, 'Training ' + vis_title, vis_legend)
 
     data_loader = data.DataLoader(dataset, args.batch_size,
                                   num_workers=args.num_workers,
                                   shuffle=True, collate_fn=detection_collate,
                                   pin_memory=True)
+
+    logging.debug('Training set size is ' + str(len(dataset)))
+
     # create batch iterator
     batch_iterator = iter(data_loader)
     for iteration in range(args.start_iter, cfg['max_iter']):
 
+        # resume training
+        ssd_net.train()
+
         t0 = time.time()
-
-
-        if args.visdom and iteration != 0 and (iteration % epoch_size == 0):
-            epoch += 1
-            update_vis_plot(epoch, loc_loss, viz, conf_loss, epoch_plot, None,
-                            'append', epoch_size)
-            # reset epoch loss counters
-            loc_loss = 0
-            conf_loss = 0
 
         if iteration in cfg['lr_steps']:
             step_index += 1
@@ -220,19 +218,23 @@ def train():
         else:
             images = Variable(images)
             targets = [Variable(ann, volatile=True) for ann in targets]
+
         # forward
-        out = net(images)
+        out = ssd_net(images)
+
         # backprop
         optimizer.zero_grad()
         loss_l, loss_c = criterion(out, targets)
-        loss = args.alpha * loss_l + loss_c
+        loss = args.alpha * loss_l + loss_c #TODO. For now alpha should be 1. While plotting alpha is assumed to be 1
         loss.backward()
         optimizer.step()
-        loc_loss += loss_l.item()#data[0]
-        conf_loss += loss_c.item()#data[0]
+
+        loc_loss += loss_l.item()
+        conf_loss += loss_c.item()
 
         t1 = time.time()
 
+        # Log progress
         if iteration % 10 == 0:
             logging.debug('timer: %.4f sec.' % (t1 - t0))
             logging.debug('iter ' + repr(iteration) + ' || Loss: %.4f ||' % (loss.item()))
@@ -248,23 +250,90 @@ def train():
                         'weights_' + args.exp_name, 'ssd' + str(args.model_type) + args.dataset +
                         repr(iteration) + '.pth'))
 
-        elif loss.item() < min_total_loss:
-            min_total_loss = loss.item()
-            torch.save(ssd_net.state_dict(),
-                       os.path.join(
-                           'weights_' + args.exp_name, 'best_ssd' + str(args.model_type) + args.dataset +
-                           repr(iteration) + '.pth'))
 
-        if (iteration % epoch_size == 0):
+        if iteration!=0 and (iteration % epoch_size == 0):
+            epoch += 1
+
             torch.save(ssd_net.state_dict(),
                        os.path.join(
                            'weights_' + args.exp_name, 'epoch_ssd' + str(args.model_type) + args.dataset +
-                           repr(epoch+1) + '.pth'))
+                           repr(epoch) + '.pth'))
+
+
+            train_loss = loc_loss + conf_loss
+            update_vis_plot(epoch, loc_loss, viz, conf_loss, epoch_plot, None,
+                            'append', epoch_size)
+
+            # Validate data
+            validation_loss = validate(args, ssd_net, criterion, cfg)
+
+            if epoch == 1:
+                validation_plot = create_validation_plot(epoch, validation_loss,
+                                                         'Epoch', 'Loss', viz, 'Validating ' + vis_title,
+                                                         ['Validation'])
+            else:
+                update_validation_plot(epoch, validation_loss, viz,
+                                       validation_plot, 'append')
+
+            if validation_loss < min_total_loss:
+                min_total_loss = validation_loss
+                torch.save(ssd_net.state_dict(),
+                           os.path.join(
+                               'weights_' + args.exp_name, 'best_ssd' + str(args.model_type) + args.dataset +
+                               repr(iteration) + '.pth'))
+
+            # reset epoch loss counters
+            loc_loss = 0
+            conf_loss = 0
 
     torch.save(ssd_net.state_dict(),
                args.exp_name + '' + args.dataset + '.pth')
 
     logging.debug("Final weights are saved at " + args.exp_name + '' + args.dataset + '.pth')
+
+def validate(args, net, criterion, cfg):
+
+    # Turn off learning. Go to testing phase
+    net.eval()
+
+    dataset = GTDBDetection(args, args.validation_data, split='validate',
+                            transform=SSDAugmentation(cfg['min_dim'], mean=MEANS))
+
+    data_loader = data.DataLoader(dataset, args.batch_size,
+                                  num_workers=args.num_workers,
+                                  shuffle=False, collate_fn=detection_collate,
+                                  pin_memory=True)
+
+    total = len(dataset)
+    done = 0
+    loc_loss = 0
+    conf_loss = 0
+
+    start = time.time()
+
+    for batch_idx, (images, targets, ids) in enumerate(data_loader):
+
+        done = done + len(images)
+        logging.debug('processing {}/{}'.format(done, total))
+
+        if args.cuda:
+            images = images.cuda()
+            targets = [ann.cuda() for ann in targets]
+        else:
+            images = Variable(images)
+            targets = [Variable(ann, volatile=True) for ann in targets]
+
+        y = net(images)  # forward pass
+
+        loss_l, loss_c = criterion(y, targets)
+        loc_loss += loss_l.item()  # data[0]
+        conf_loss += loss_c.item()  # data[0]
+
+    end = time.time()
+    logging.debug('Time taken for validation ' + str(datetime.timedelta(seconds=end - start)))
+
+    return (loc_loss + conf_loss) / (total/args.batch_size)
+
 
 def adjust_learning_rate(optimizer, gamma, step):
     """Sets the learning rate to the initial LR decayed by 10 at every
@@ -286,17 +355,40 @@ def weights_init(m):
         xavier(m.weight.data)
         m.bias.data.zero_()
 
-
-def create_vis_plot(_xlabel, _ylabel, viz, _title, _legend):
+def create_validation_plot(epoch, validation_loss, _xlabel, _ylabel, viz, _title, _legend):
     return viz.line(
-        X=torch.zeros((1,)).cpu(),
-        Y=torch.zeros((1, 3)).cpu(),
+        X=torch.ones((1, 1)).cpu() * epoch,
+        Y=torch.Tensor([validation_loss]).unsqueeze(0).cpu(),
         opts=dict(
             xlabel=_xlabel,
             ylabel=_ylabel,
             title=_title,
             legend=_legend
         )
+    )
+
+
+def create_vis_plot(_xlabel, _ylabel, viz, _title, _legend):
+    return viz.line(
+        X=torch.zeros((1,)).cpu(),
+        Y=torch.zeros((1, len(_legend))).cpu(),
+        opts=dict(
+            xlabel=_xlabel,
+            ylabel=_ylabel,
+            title=_title,
+            legend=_legend
+        )
+    )
+
+
+def update_validation_plot(epoch, validation_loss,
+                           viz, window, update_type):
+
+    viz.line(
+        X=torch.ones((1, 1)).cpu() * epoch,
+        Y=torch.Tensor([validation_loss]).unsqueeze(0).cpu(),
+        win=window,
+        update=update_type
     )
 
 
@@ -316,6 +408,7 @@ def update_vis_plot(iteration, loc, viz, conf, window1, window2, update_type,
             win=window2,
             update=True
         )
+
 
 if __name__ == '__main__':
     #os.environ['CUDA_VISIBLE_DEVICES'] = '1'

@@ -123,17 +123,22 @@ def save_boxes(args, recognized_boxes, recognized_scores, img_id):
     if len(recognized_scores) < 1 and len(recognized_boxes) < 1:
         return
 
-    path = os.path.join("eval", args.exp_name, img_id + ".png")
-    math_csv_path = os.path.join("eval", args.exp_name, img_id + ".csv")
+    pdf_name = img_id.split("/")[0]
+    math_csv_path = os.path.join("eval", args.exp_name, pdf_name + ".csv")
 
-    if not os.path.exists(os.path.dirname(path)):
-        os.makedirs(os.path.dirname(path))
+    if not os.path.exists(os.path.dirname(math_csv_path)):
+        os.makedirs(os.path.dirname(math_csv_path))
 
-    math_output = open(math_csv_path, 'w')
+    math_output = open(math_csv_path, 'a')
 
-    final_op = np.concatenate((recognized_boxes,np.transpose([recognized_scores])),axis=1)
+    recognized_boxes = np.concatenate((recognized_boxes,np.transpose([recognized_scores])),axis=1)
 
-    np.savetxt(math_csv_path, final_op, fmt='%.2f', delimiter=',')
+    page_num = int(img_id.split("/")[-1])
+
+    col = np.array([int(page_num) - 1] * recognized_boxes.shape[0])
+    math_regions = np.concatenate((col[:, np.newaxis], recognized_boxes), axis=1)
+
+    np.savetxt(math_output, math_regions, fmt='%.2f', delimiter=',')
     math_output.close()
 
     #

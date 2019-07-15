@@ -66,12 +66,15 @@ class GTDBDetection(data.Dataset):
     """
 
 
-    def __init__(self, args,
+    def __init__(self, args, data_file, split='train',
                  transform=None, target_transform=GTDBAnnotationTransform(),
                  dataset_name='GTDB'):
 
+        #split can be train, validate or test
+
         self.root = args.dataset_root
-        self.image_set = args.type
+        self.image_set = data_file
+        self.split = split
         self.transform = transform
         self.target_transform = target_transform
         self.name = dataset_name
@@ -184,12 +187,11 @@ class GTDBDetection(data.Dataset):
 
 
     def __getitem__(self, index):
-        im, gt, h, w, img_id = self.pull_item(index)
-        return im, gt, img_id
+        im, gt, metadata = self.pull_item(index)
+        return im, gt, metadata
 
     def __len__(self):
         return len(self.metadata)
-
 
     def gen_targets(self, index):
 
@@ -240,8 +242,9 @@ class GTDBDetection(data.Dataset):
         x_h = x_l + min(self.window, image.shape[0]-x_l)
         y_h = y_l + min(self.window, image.shape[1]-y_l)
 
-        cropped_image = np.zeros((self.window, self.window, image.shape[2]))
+        cropped_image = np.full((self.window, self.window, image.shape[2]), 255)
         cropped_image[:x_h-x_l, :y_h-y_l, :] = image[x_l: x_h, y_l: y_h, :]
+
         return cropped_image
 
     def pull_item(self, index):
@@ -264,6 +267,6 @@ class GTDBDetection(data.Dataset):
             # img = img.transpose(2, 0, 1)
             target = np.hstack((boxes, np.expand_dims(labels, axis=1)))
 
-        return torch.from_numpy(img).permute(2, 0, 1), target, height, width, metadata[1]
+        return torch.from_numpy(img).permute(2, 0, 1), target, metadata
         # return torch.from_numpy(img), target, height, width
 
