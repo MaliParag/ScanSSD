@@ -33,16 +33,18 @@ parser.add_argument('--use_char_info', default=False, type=bool, help='Whether o
 parser.add_argument('--limit', default=-1, type=int, help='limit on number of test examples')
 parser.add_argument('--cfg', default="gtdb", type=str,
                     help='Type of network: either gtdb or math_gtdb_512')
-parser.add_argument('--kernel', default="3 3", type=int, nargs='+',
-                    help='Kernel size for feature layers: 3 3 or 1 5')
-parser.add_argument('--padding', default="1 1", type=int, nargs='+',
-                    help='Padding for feature layers: 1 1 or 0 2')
-parser.add_argument('--log_dir', default="logs", type=str,
-                    help='dir to save the logs')
 parser.add_argument('--batch_size', default=16, type=int,
                     help='Batch size for training')
 parser.add_argument('--num_workers', default=4, type=int,
                     help='Number of workers used in data loading')
+parser.add_argument('--kernel', default="3 3", type=int, nargs='+',
+                    help='Kernel size for feature layers: 3 3 or 1 5')
+parser.add_argument('--padding', default="1 1", type=int, nargs='+',
+                    help='Padding for feature layers: 1 1 or 0 2')
+parser.add_argument('--neg_mining', default=True, type=bool,
+                    help='Whether or not to use hard negative mining with ratio 1:3')
+parser.add_argument('--log_dir', default="logs", type=str,
+                    help='dir to save the logs')
 parser.add_argument('--stride', default=0.1, type=float,
                     help='Stride to use for sliding window')
 parser.add_argument('--window', default=1200, type=int,
@@ -215,7 +217,7 @@ def test_gtdb():
     net.to(gpu_id)
 
     # TODO: should remove map_location argument
-    net.load_state_dict(torch.load(args.trained_model, map_location={'cuda:0':'cuda:1'}))
+    #net.load_state_dict(torch.load(args.trained_model, map_location={'cuda:0':'cuda:1'}))
     net.eval()
     logging.debug('Finished loading model!')
 

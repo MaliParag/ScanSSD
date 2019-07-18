@@ -14,6 +14,9 @@ from gtdb import feature_extractor
 import copy
 import utils.visualize as visualize
 
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
 GTDB_CLASSES = (  # always index 0 is background
     'math')
 
@@ -112,27 +115,25 @@ class GTDBDetection(data.Dataset):
 
             height, width, channels = self.images[id[1]].shape
             current_page_boxes = self.math_ground_truth[id[1]]
+            n_horizontal = np.ceil(width / self.window)  # 4
+            n_vertical = np.ceil(height / self.window)  # 5
+
+            h = np.arange(0, n_horizontal - 1 + self.stride, self.stride)
+            v = np.arange(0, n_vertical - 1 + self.stride, self.stride)
+            crop_size = self.window
 
             if len(current_page_boxes) > 1:
-
-                n_horizontal = np.ceil(width / self.window)  # 4
-                n_vertical = np.ceil(height / self.window)  # 5
-
-                h = np.arange(0, n_horizontal - 1 + self.stride, self.stride)
-                v = np.arange(0, n_vertical - 1 + self.stride, self.stride)
-
-                crop_size = self.window
 
                 for i in h:
                     for j in v:
                         x_l = int(np.round(crop_size * i))
-                        x_h = int(np.round(crop_size * (i + 1)))
+                        x_h = x_l + self.window
 
                         y_l = int(np.round(crop_size * j))
-                        y_h = int(np.round(crop_size * (j + 1)))
+                        y_h = y_l + self.window
 
                         # left, top, right, bottom
-                        image_box = [y_l, x_l, y_h, x_h]
+                        image_box = [x_l, y_l, x_h, y_h]
 
                         current_page_boxes = copy.deepcopy(self.math_ground_truth[id[1]])
 
@@ -144,21 +145,31 @@ class GTDBDetection(data.Dataset):
                                 # y increases downwards
 
                                 # crop the boxes to fit into image region
-                                box[0] = max(y_l, box[0])
-                                box[1] = max(x_l, box[1])
-                                box[2] = min(y_h, box[2])
-                                box[3] = min(x_h, box[3])
+                                box[0] = max(x_l, box[0])
+                                box[1] = max(y_l, box[1])
+                                box[2] = min(x_h, box[2])
+                                box[3] = min(y_h, box[3])
 
                                 # # Translate to origin
-                                box[0] = box[0] - y_l
-                                box[2] = box[2] - y_l
+                                box[0] = box[0] - x_l
+                                box[2] = box[2] - x_l
 
-                                box[1] = box[1] - x_l
-                                box[3] = box[3] - x_l
+                                box[1] = box[1] - y_l
+                                box[3] = box[3] - y_l
 
                                 if feature_extractor.width(box) > 0 and feature_extractor.height(box) > 0:
-                                    self.metadata.append([id[1], y_l, x_l])
+                                    self.metadata.append([id[1], x_l, y_l])
                                     break
+
+            elif self.split=='test':
+
+                for i in h:
+                    for j in v:
+                        x_l = int(np.round(crop_size * i))
+                        y_l = int(np.round(crop_size * j))
+                        self.metadata.append([id[1], x_l, y_l])
+
+
 
     def read_all_images(self):
 
@@ -197,15 +208,15 @@ class GTDBDetection(data.Dataset):
 
         metadata = self.metadata[index]
 
-        y_l = metadata[1]
-        x_l = metadata[2]
+        x_l = metadata[1]
+        y_l = metadata[2]
         x_h = x_l + self.window
         y_h = y_l + self.window
 
         current_page_boxes = copy.deepcopy(self.math_ground_truth[metadata[0]])
         targets = []
 
-        image_box = [y_l, x_l, y_h, x_h]
+        image_box = [x_l, y_l, x_h, y_h]
 
         # if math intersects only consider the region which
         # is part of the current bounding box
@@ -215,17 +226,17 @@ class GTDBDetection(data.Dataset):
                 # y increases downwards
 
                 # crop the boxes to fit into image region
-                box[0] = max(y_l, box[0])
-                box[1] = max(x_l, box[1])
-                box[2] = min(y_h, box[2])
-                box[3] = min(x_h, box[3])
+                box[0] = max(x_l, box[0])
+                box[1] = max(y_l, box[1])
+                box[2] = min(x_h, box[2])
+                box[3] = min(y_h, box[3])
 
                 # # Translate to origin
-                box[0] = box[0] - y_l
-                box[2] = box[2] - y_l
+                box[0] = box[0] - x_l
+                box[2] = box[2] - x_l
 
-                box[1] = box[1] - x_l
-                box[3] = box[3] - x_l
+                box[1] = box[1] - y_l
+                box[3] = box[3] - y_l
 
                 if feature_extractor.width(box) > 0 and feature_extractor.height(box) > 0:
                     targets.append(box)
@@ -237,13 +248,13 @@ class GTDBDetection(data.Dataset):
         metadata = self.metadata[index]
         image = self.images[metadata[0]]
 
-        y_l = metadata[1]
-        x_l = metadata[2]
-        x_h = x_l + min(self.window, image.shape[0]-x_l)
-        y_h = y_l + min(self.window, image.shape[1]-y_l)
+        x_l = metadata[1]
+        y_l = metadata[2]
+        x_h = x_l + min(self.window, image.shape[1]-x_l)
+        y_h = y_l + min(self.window, image.shape[0]-y_l)
 
         cropped_image = np.full((self.window, self.window, image.shape[2]), 255)
-        cropped_image[:x_h-x_l, :y_h-y_l, :] = image[x_l: x_h, y_l: y_h, :]
+        cropped_image[:y_h-y_l, :x_h-x_l, :] = image[y_l: y_h, x_l: x_h, :]
 
         return cropped_image
 
@@ -253,6 +264,20 @@ class GTDBDetection(data.Dataset):
 
         target = self.gen_targets(index)
         img = self.gen_image(index)
+
+        # Code to visualiza generated data
+        # fig, ax = plt.subplots(1)
+        # for box in target:
+        #     rect = patches.Rectangle((box[0], box[1]), box[2]-box[0], box[3] - box[1],
+        #                              linewidth=1, edgecolor='g', facecolor='none')
+        #     ax.add_patch(rect)
+        #
+        # plt.imshow(img)
+        # plt.show()
+        #
+        # import time
+        # filep = 'rer' + str(time.time()) + '.png'
+        # plt.savefig(filep.format(metadata[0]), dpi=300)
 
         height, width, channels = img.shape
 
@@ -266,6 +291,7 @@ class GTDBDetection(data.Dataset):
             img = img[:, :, (2, 1, 0)]
             # img = img.transpose(2, 0, 1)
             target = np.hstack((boxes, np.expand_dims(labels, axis=1)))
+
 
         return torch.from_numpy(img).permute(2, 0, 1), target, metadata
         # return torch.from_numpy(img), target, height, width
