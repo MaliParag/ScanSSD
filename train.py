@@ -22,6 +22,7 @@ from utils import helpers
 import logging
 import time
 import datetime
+from torchviz import make_dot
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -67,7 +68,7 @@ parser.add_argument('--suffix', default="_10", type=str,
                     help='Stride % used while generating images or dpi from which images was generated or some other identifier')
 parser.add_argument('--training_data', default="training_data", type=str,
                     help='Training data to use. This is list of file names, one per line')
-parser.add_argument('--validation_data', default="validation_data", type=str,
+parser.add_argument('--validation_data', default="", type=str,
                     help='Validation data to use. This is list of file names, one per line')
 parser.add_argument('--use_char_info', default=False, type=bool,
                     help='Whether to use char position info and labels')
@@ -147,6 +148,8 @@ def train():
         vgg_weights = torch.load("base_weights/" + args.basenet)
         logging.debug('Loading base network...')
         ssd_net.vgg.load_state_dict(vgg_weights)
+
+    visualize(ssd_net, gpu_id)
 
     # if args.cuda:
     #     net = net.cuda()
@@ -264,23 +267,24 @@ def train():
             update_vis_plot(epoch, loc_loss, viz, conf_loss, epoch_plot, None,
                             'append', epoch_size)
 
-            # Validate data
-            validation_loss = validate(args, ssd_net, criterion, cfg)
+            if args.validation_data != '':
+                # Validate data
+                validation_loss = validate(args, ssd_net, criterion, cfg)
 
-            if epoch == 1:
-                validation_plot = create_validation_plot(epoch, validation_loss,
-                                                         'Epoch', 'Loss', viz, 'Validating ' + vis_title,
-                                                         ['Validation'])
-            else:
-                update_validation_plot(epoch, validation_loss, viz,
-                                       validation_plot, 'append')
+                if epoch == 1:
+                    validation_plot = create_validation_plot(epoch, validation_loss,
+                                                             'Epoch', 'Loss', viz, 'Validating ' + vis_title,
+                                                             ['Validation'])
+                else:
+                    update_validation_plot(epoch, validation_loss, viz,
+                                           validation_plot, 'append')
 
-            if validation_loss < min_total_loss:
-                min_total_loss = validation_loss
-                torch.save(ssd_net.state_dict(),
-                           os.path.join(
-                               'weights_' + args.exp_name, 'best_ssd' + str(args.model_type) + args.dataset +
-                               repr(iteration) + '.pth'))
+                if validation_loss < min_total_loss:
+                    min_total_loss = validation_loss
+                    torch.save(ssd_net.state_dict(),
+                               os.path.join(
+                                   'weights_' + args.exp_name, 'best_ssd' + str(args.model_type) + args.dataset +
+                                   repr(iteration) + '.pth'))
 
             # reset epoch loss counters
             loc_loss = 0
@@ -344,6 +348,15 @@ def adjust_learning_rate(optimizer, gamma, step):
     lr = args.lr * (gamma ** (step))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+
+def visualize(ssd_net, gpu_id):
+    x = np.zeros((300,300,3))
+    x = torch.from_numpy(x).permute(2, 0, 1)
+    x = x.unsqueeze(0)
+    x = x.to(gpu_id,  dtype=torch.float)
+    ssd_net.eval()
+    y = ssd_net(x)
+    make_dot(y[0], params=dict(ssd_net.named_parameters())).render(filename='ssd_net')
 
 
 def xavier(param):

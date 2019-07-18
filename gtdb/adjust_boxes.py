@@ -75,7 +75,10 @@ def adjust(params):
 
     new_math = []
     for math in math_regions:
-        new_math.append(fit_box.adjust_box(im_bw, math))
+        box = fit_box.adjust_box(im_bw, math)
+
+        if feature_extractor.width(box) > 0 and feature_extractor.height(box) > 0:
+            new_math.append(box)
 
     return new_math
 

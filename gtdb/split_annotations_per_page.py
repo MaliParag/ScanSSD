@@ -31,14 +31,17 @@ def split(args):
         for key in map:
 
             boxes = map[key]
-
+            key = float(key)
             img_file = os.path.join(img_dir, pdf_name, str(int(key) + 1) + ".png")
             img = cv2.imread(img_file)
 
             height, width, channels = img.shape
 
-            width_ratio = 512 / width
-            height_ratio = 512 / height
+            #width_ratio = 512 / width
+            #height_ratio = 512 / height
+
+            width_ratio = 1
+            height_ratio = 1
 
             # create processed math file
             file_op = open(os.path.join(out_dir, pdf_name, str(int(key) + 1)) + ".p" + ext, "w")

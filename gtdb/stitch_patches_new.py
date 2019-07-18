@@ -142,12 +142,41 @@ def voting_avg_score(votes, math_regions):
     return votes
 
 
+def perform_nms(math_regions):
+
+    # convert from x1,y1,x2,y2 to x,y,w,h
+    math_regions[:, 2] = math_regions[:, 2] - math_regions[:, 0]
+    math_regions[:, 3] = math_regions[:, 3] - math_regions[:, 1]
+
+    scores = math_regions[:, 4]
+    math_regions = np.delete(math_regions, 4, 1)
+
+    math_regions = math_regions.tolist()
+    scores = scores.tolist()
+
+    indices = NMSBoxes(math_regions, scores, 0.2, 0.5)
+
+    indices = [item for sublist in indices for item in sublist]
+    math_regions = [math_regions[i] for i in indices]
+
+    math_regions = np.array(math_regions)
+
+    # restore to x1,y1,x2,y2
+    math_regions[:, 2] = math_regions[:, 2] + math_regions[:, 0]
+    math_regions[:, 3] = math_regions[:, 3] + math_regions[:, 1]
+
+    return math_regions.tolist()
+
+
 def voting_algo(params):
 
     args, math_regions, pdf_name, page_num = params
     print('Processing ', pdf_name, ' > ', page_num)
 
     image = cv2.imread(os.path.join(args.home_images,pdf_name,str(int(page_num+1))+".png"))
+
+    nms_regions = perform_nms(math_regions)
+    return nms_regions
 
     # vote for the regions
     votes = vote_for_regions(args, math_regions, image)
