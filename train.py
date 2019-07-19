@@ -149,7 +149,7 @@ def train():
         logging.debug('Loading base network...')
         ssd_net.vgg.load_state_dict(vgg_weights)
 
-    visualize(ssd_net, gpu_id)
+    #visualize(ssd_net, gpu_id)
 
     # if args.cuda:
     #     net = net.cuda()
