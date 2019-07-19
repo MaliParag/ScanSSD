@@ -11,7 +11,7 @@ from torch.autograd import Variable
 from torchvision import datasets, transforms
 from torch.utils.data import Dataset, DataLoader
 from data import *
-
+import shutil
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')
 parser.add_argument('--trained_model', default='weights/ssd300_GTDB_990.pth',
@@ -62,6 +62,8 @@ else:
 if not os.path.exists(args.save_folder):
     os.mkdir(args.save_folder)
 
+if os.path.exists(os.path.join(args.save_folder, args.exp_name)):
+    shutil.rmtree(os.path.join(args.save_folder, args.exp_name))
 
 # def test_net(args, net, gpu_id, testset, transform, thresh):
 #     # dump predictions and assoc. ground truth to text file for now
@@ -165,8 +167,8 @@ def test_net_batch(args, net, gpu_id, dataset, transform, thresh):
         for img, meta in zip(images, metadata):
 
             img_id = meta[0]
-            y_l = meta[1]
-            x_l = meta[2]
+            x_l = meta[1]
+            y_l = meta[2]
 
             img = img.permute(1,2,0)
             # scale each detection back up to the image
@@ -187,7 +189,7 @@ def test_net_batch(args, net, gpu_id, dataset, transform, thresh):
 
                 score = detections[k, i, j, 0]
                 pt = (detections[k, i, j, 1:] * args.window).cpu().numpy()
-                coords = (pt[0] + y_l, pt[1] + x_l, pt[2] + y_l, pt[3] + x_l)
+                coords = (pt[0] + x_l, pt[1] + y_l, pt[2] + x_l, pt[3] + y_l)
                 #coords = (pt[0], pt[1], pt[2], pt[3])
                 recognized_boxes.append(coords)
                 recognized_scores.append(score.cpu().numpy())

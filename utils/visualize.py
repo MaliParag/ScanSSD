@@ -124,7 +124,7 @@ def save_boxes(args, recognized_boxes, recognized_scores, img_id):
         return
 
     pdf_name = img_id.split("/")[0]
-    math_csv_path = os.path.join("eval", args.exp_name, pdf_name + ".csv")
+    math_csv_path = os.path.join(args.save_folder, args.exp_name, pdf_name + ".csv")
 
     if not os.path.exists(os.path.dirname(math_csv_path)):
         os.makedirs(os.path.dirname(math_csv_path))

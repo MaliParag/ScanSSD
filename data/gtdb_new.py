@@ -161,15 +161,6 @@ class GTDBDetection(data.Dataset):
                                     self.metadata.append([id[1], x_l, y_l])
                                     break
 
-            elif self.split=='test':
-
-                for i in h:
-                    for j in v:
-                        x_l = int(np.round(crop_size * i))
-                        y_l = int(np.round(crop_size * j))
-                        self.metadata.append([id[1], x_l, y_l])
-
-
 
     def read_all_images(self):
 
