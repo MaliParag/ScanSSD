@@ -97,7 +97,7 @@ class GTDBDetection(data.Dataset):
         # initialize the training images and annotations
         self.images = {}
         self.math_ground_truth = {}
-
+        self.is_math = {}
         # for each id store the image patch which has math
         # This can be used as a box util
         self.metadata = []
@@ -120,7 +120,7 @@ class GTDBDetection(data.Dataset):
             v = np.arange(0, n_vertical - 1 + self.stride, self.stride)
             crop_size = self.window
 
-            if len(current_page_boxes) > 1:
+            if self.split == 'train' and self.is_math[id[1]]:
 
                 for i in h:
                     for j in v:
@@ -158,7 +158,12 @@ class GTDBDetection(data.Dataset):
                                 if feature_extractor.width(box) > 0 and feature_extractor.height(box) > 0:
                                     self.metadata.append([id[1], x_l, y_l])
                                     break
-
+            elif self.split=='test':
+                for i in h:
+                    for j in v:
+                        x_l = int(np.round(crop_size * i))
+                        y_l = int(np.round(crop_size * j))
+                        self.metadata.append([id[1], x_l, y_l])
 
     def read_all_images(self):
 
@@ -182,9 +187,10 @@ class GTDBDetection(data.Dataset):
                     gt_regions = gt_regions.reshape(1, -1)
 
                 self.math_ground_truth[id[1]] = gt_regions
+                self.is_math[id[1]] = True
             else:
-                self.math_ground_truth[id[1]] = np.array([])
-
+                self.math_ground_truth[id[1]] = np.array([-1,-1,-1,-1]).reshape(1,-1)
+                self.is_math[id[1]] = False
 
     def __getitem__(self, index):
         im, gt, metadata = self.pull_item(index)
