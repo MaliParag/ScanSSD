@@ -14,8 +14,6 @@ from gtdb import feature_extractor
 import copy
 import utils.visualize as visualize
 
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 
 GTDB_CLASSES = (  # always index 0 is background
     'math')
