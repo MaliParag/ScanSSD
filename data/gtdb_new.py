@@ -284,4 +284,3 @@ class GTDBDetection(data.Dataset):
 
         return torch.from_numpy(img).permute(2, 0, 1), target, metadata
         # return torch.from_numpy(img), target, height, width
-

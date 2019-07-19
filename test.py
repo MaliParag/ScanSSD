@@ -125,7 +125,7 @@ if os.path.exists(os.path.join(args.save_folder, args.exp_name)):
 #             draw_boxes(args, img, recognized_boxes, recognized_scores,
 #                        debug_boxes, debug_scores, scale, img_id)
 #
-#    f.close()
+#     f.close()
 
 
 def test_net_batch(args, net, gpu_id, dataset, transform, thresh):
@@ -218,8 +218,8 @@ def test_gtdb():
     logging.debug(net)
     net.to(gpu_id)
 
-    # TODO: should remove map_location argument
-    #net.load_state_dict(torch.load(args.trained_model, map_location={'cuda:0':'cuda:1'}))
+    # TODO: find a way to map location on the go
+    net.load_state_dict(torch.load(args.trained_model, map_location={'cuda:1':'cuda:0'}))
     net.eval()
     logging.debug('Finished loading model!')
 
