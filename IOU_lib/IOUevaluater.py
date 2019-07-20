@@ -27,7 +27,7 @@ def read_file(filename, bboxes, flag):
         if line.replace(' ', '') == '':
             continue
         splitLine = line.split(",")
-        idClass = int(splitLine[0])
+        idClass = float(splitLine[0])
         if prev_page == -1:
             prev_page = idClass
         else:

@@ -299,6 +299,7 @@ def train():
 
 def validate(args, net, criterion, cfg):
 
+    validation_batch_size = 1
     try:
         # Turn off learning. Go to testing phase
         net.eval()
@@ -306,7 +307,7 @@ def validate(args, net, criterion, cfg):
         dataset = GTDBDetection(args, args.validation_data, split='validate',
                                 transform=SSDAugmentation(cfg['min_dim'], mean=MEANS))
 
-        data_loader = data.DataLoader(dataset, 1,
+        data_loader = data.DataLoader(dataset, validation_batch_size,
                                       num_workers=args.num_workers,
                                       shuffle=False, collate_fn=detection_collate,
                                       pin_memory=True)
@@ -339,7 +340,7 @@ def validate(args, net, criterion, cfg):
         end = time.time()
         logging.debug('Time taken for validation ' + str(datetime.timedelta(seconds=end - start)))
 
-        return (loc_loss + conf_loss) / (total/args.batch_size)
+        return (loc_loss + conf_loss) / (total/validation_batch_size)
     except Exception as e:
         logging.error("Could not validate", exc_info=True)
         return 0
