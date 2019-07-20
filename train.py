@@ -176,6 +176,8 @@ def train():
     logging.debug('Loading the dataset...')
 
     epoch_size = len(dataset) // args.batch_size
+
+
     logging.debug('Training SSD on:' + dataset.name)
     logging.debug('Using the specified args:')
     logging.debug(args)
@@ -297,47 +299,50 @@ def train():
 
 def validate(args, net, criterion, cfg):
 
-    # Turn off learning. Go to testing phase
-    net.eval()
+    try:
+        # Turn off learning. Go to testing phase
+        net.eval()
 
-    dataset = GTDBDetection(args, args.validation_data, split='test',
-                            transform=SSDAugmentation(cfg['min_dim'], mean=MEANS))
+        dataset = GTDBDetection(args, args.validation_data, split='validate',
+                                transform=SSDAugmentation(cfg['min_dim'], mean=MEANS))
 
-    data_loader = data.DataLoader(dataset, args.batch_size,
-                                  num_workers=args.num_workers,
-                                  shuffle=False, collate_fn=detection_collate,
-                                  pin_memory=True)
+        data_loader = data.DataLoader(dataset, 1,
+                                      num_workers=args.num_workers,
+                                      shuffle=False, collate_fn=detection_collate,
+                                      pin_memory=True)
 
-    total = len(dataset)
-    done = 0
-    loc_loss = 0
-    conf_loss = 0
+        total = len(dataset)
+        done = 0
+        loc_loss = 0
+        conf_loss = 0
 
-    start = time.time()
+        start = time.time()
 
-    for batch_idx, (images, targets, ids) in enumerate(data_loader):
+        for batch_idx, (images, targets, ids) in enumerate(data_loader):
 
-        done = done + len(images)
-        logging.debug('processing {}/{}'.format(done, total))
+            done = done + len(images)
+            logging.debug('processing {}/{}'.format(done, total))
 
-        if args.cuda:
-            images = images.cuda()
-            targets = [ann.cuda() for ann in targets]
-        else:
-            images = Variable(images)
-            targets = [Variable(ann, volatile=True) for ann in targets]
+            if args.cuda:
+                images = images.cuda()
+                targets = [ann.cuda() for ann in targets]
+            else:
+                images = Variable(images)
+                targets = [Variable(ann, volatile=True) for ann in targets]
 
-        y = net(images)  # forward pass
+            y = net(images)  # forward pass
 
-        loss_l, loss_c = criterion(y, targets)
-        loc_loss += loss_l.item()  # data[0]
-        conf_loss += loss_c.item()  # data[0]
+            loss_l, loss_c = criterion(y, targets)
+            loc_loss += loss_l.item()  # data[0]
+            conf_loss += loss_c.item()  # data[0]
 
-    end = time.time()
-    logging.debug('Time taken for validation ' + str(datetime.timedelta(seconds=end - start)))
+        end = time.time()
+        logging.debug('Time taken for validation ' + str(datetime.timedelta(seconds=end - start)))
 
-    return (loc_loss + conf_loss) / (total/args.batch_size)
-
+        return (loc_loss + conf_loss) / (total/args.batch_size)
+    except Exception as e:
+        logging.error("Could not validate", exc_info=True)
+        return 0
 
 def adjust_learning_rate(optimizer, gamma, step):
     """Sets the learning rate to the initial LR decayed by 10 at every

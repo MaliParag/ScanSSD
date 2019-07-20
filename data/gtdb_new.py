@@ -120,7 +120,7 @@ class GTDBDetection(data.Dataset):
             v = np.arange(0, n_vertical - 1 + self.stride, self.stride)
             crop_size = self.window
 
-            if self.split == 'train' and self.is_math[id[1]]:
+            if (self.split == 'train' or self.split == 'validate')  and self.is_math[id[1]]:
 
                 for i in h:
                     for j in v:
