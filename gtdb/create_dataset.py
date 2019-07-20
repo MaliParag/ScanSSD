@@ -69,7 +69,7 @@ def read_math(args, pdf_name):
 
     return data.astype(int)
 
-def adjust(params):
+def normalize(params):
 
     args, math_regions, pdf_name, page_num = params
     print('Processing ', pdf_name, ' > ', page_num)
@@ -79,14 +79,15 @@ def adjust(params):
 
     new_math = []
     for math in math_regions:
-        box = fit_box.adjust_box(im_bw, math)
+        box = [math[0]/im_bw.shape[1], math[1]/im_bw.shape[0],
+               math[2]/im_bw.shape[1], math[3]/im_bw.shape[0]]#fit_box.adjust_box(im_bw, math)
 
         if feature_extractor.width(box) > 0 and feature_extractor.height(box) > 0:
             new_math.append(box)
 
     return new_math
 
-def adjust_boxes(args):
+def normalize_boxes(args):
     pdf_list = []
     pdf_names_file = open(args.data_file, 'r')
 
@@ -112,7 +113,7 @@ def adjust_boxes(args):
             voting_ip_list.append([args, np.delete(current_math, 0, 1), pdf_name, page_num])
 
     pool = Pool(processes=args.num_workers)
-    out = pool.map(adjust, voting_ip_list)
+    out = pool.map(normalize, voting_ip_list)
 
     for ip, final_math in zip(voting_ip_list, out):
         pdf_name = ip[2]
@@ -134,4 +135,4 @@ def adjust_boxes(args):
 if __name__ == '__main__':
 
     args = parse_args()
-    adjust_boxes(args)
+    normalize_boxes(args)

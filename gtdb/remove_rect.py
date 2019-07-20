@@ -91,7 +91,7 @@ def remove_rect(filename, math_dir, output_dir):
 
     pdf_names.close()
 
-    pool = Pool(processes=24)
+    pool = Pool(processes=4)
     pool.map(remove, pages_list)
     pool.close()
     pool.join()
@@ -103,8 +103,8 @@ if __name__ == "__main__":
     home_images = "/home/psm2208/data/GTDB/images/"
     home_anno = "/home/psm2208/data/GTDB/annotations/"
 
-    math_dir = "/home/psm2208/code/eval/Test3_Focal_10_25/equal_30.0_segmented/"
-    output_dir = "/home/psm2208/code/eval/Test3_Focal_10_25/equal_30.0_segmented_2/"
+    math_dir = "/home/psm2208/data/GTDB/annotationsV2"
+    output_dir = "/home/psm2208/data/GTDB/annotationsV3"
 
     type = sys.argv[1]
 
