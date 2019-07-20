@@ -158,7 +158,7 @@ class GTDBDetection(data.Dataset):
                                 if feature_extractor.width(box) > 0 and feature_extractor.height(box) > 0:
                                     self.metadata.append([id[1], x_l, y_l])
                                     break
-            elif self.split=='test' or self.split=='validate':
+            elif self.split=='test':
                 for i in h:
                     for j in v:
                         x_l = int(np.round(crop_size * i))

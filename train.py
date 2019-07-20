@@ -300,7 +300,7 @@ def validate(args, net, criterion, cfg):
     # Turn off learning. Go to testing phase
     net.eval()
 
-    dataset = GTDBDetection(args, args.validation_data, split='validate',
+    dataset = GTDBDetection(args, args.validation_data, split='test',
                             transform=SSDAugmentation(cfg['min_dim'], mean=MEANS))
 
     data_loader = data.DataLoader(dataset, args.batch_size,
