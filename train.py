@@ -153,6 +153,7 @@ def train():
 
     # if args.cuda:
     #     net = net.cuda()
+    step_index = 0
 
     if not args.resume:
         logging.debug('Initializing weights...')
@@ -161,8 +162,14 @@ def train():
         ssd_net.loc.apply(weights_init)
         ssd_net.conf.apply(weights_init)
 
+        for val in cfg['lr_steps']:
+            if args.start_iter > val:
+                step_index = step_index + 1
+
     optimizer = optim.SGD(ssd_net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)
+
+    adjust_learning_rate(optimizer, args.gamma, step_index)
 
     #args, cfg, overlap_thresh, bkg_label, neg_pos
     criterion = MultiBoxLoss(args, cfg, 0.5, 0, 3)
@@ -182,7 +189,6 @@ def train():
     logging.debug('Using the specified args:')
     logging.debug(args)
 
-    step_index = 0
 
     if args.visdom:
         vis_title = args.exp_name
