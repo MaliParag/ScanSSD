@@ -236,6 +236,12 @@ class GTDBDetection(data.Dataset):
                 if feature_extractor.width(box) > 0 and feature_extractor.height(box) > 0:
                     targets.append(box)
 
+        # It is done only for testing, where we do not care about targets
+        # This avoids IndexError: too many indices for array
+        # TODO: refactor in future
+        if len(targets) == 0:
+            targets = [[-1,-1,-1,-1]]
+
         return targets
 
     def gen_image(self, index):
