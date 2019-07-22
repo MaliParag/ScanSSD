@@ -136,10 +136,6 @@ def train():
         child.requires_grad = False
         ct += 1
 
-    if args.cuda:
-        #net = torch.nn.DataParallel(ssd_net)
-        ssd_net = ssd_net.to(gpu_id)
-        cudnn.benchmark = True
 
     if args.resume:
         logging.debug('Resuming training, loading {}...'.format(args.resume))
@@ -165,6 +161,11 @@ def train():
         for val in cfg['lr_steps']:
             if args.start_iter > val:
                 step_index = step_index + 1
+
+    if args.cuda:
+        ssd_net = torch.nn.DataParallel(ssd_net)
+        #ssd_net = ssd_net.to(gpu_id)
+        cudnn.benchmark = True
 
     optimizer = optim.SGD(ssd_net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)
