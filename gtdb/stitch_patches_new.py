@@ -4,6 +4,7 @@
 # read the image
 import sys
 sys.path.extend(['/home/psm2208/code', '/home/psm2208/code'])
+#sys.path.extend(['/media/psm2208/Workspace/ssd', '/media/psm2208/Workspace/ssd'])
 import cv2
 import os
 import numpy as np
@@ -232,22 +233,28 @@ def stitch(args):
     out = pool.map(voting_algo, voting_ip_list)
 
     for ip, final_math in zip(voting_ip_list, out):
-        pdf_name = ip[2]
-        page_num = ip[3]
 
-        col = np.array([int(page_num)] * len(final_math))
-        final_math = np.concatenate((col[:, np.newaxis], final_math), axis=1)
+        try:
+            pdf_name = ip[2]
+            page_num = ip[3]
 
-        math_file_path = os.path.join(args.output_dir, pdf_name + '.csv')
+            if len(final_math) == 0:
+                continue
 
-        if not os.path.exists(os.path.dirname(math_file_path)):
-            os.makedirs(os.path.dirname(math_file_path))
+            col = np.array([int(page_num)] * len(final_math))
+            final_math = np.concatenate((col[:, np.newaxis], final_math), axis=1)
 
-        math_file = open(math_file_path, 'a')
+            math_file_path = os.path.join(args.output_dir, pdf_name + '.csv')
 
-        np.savetxt(math_file, final_math, fmt='%.2f', delimiter=',')
-        math_file.close()
+            if not os.path.exists(os.path.dirname(math_file_path)):
+                os.makedirs(os.path.dirname(math_file_path))
 
+            math_file = open(math_file_path, 'a')
+
+            np.savetxt(math_file, final_math, fmt='%.2f', delimiter=',')
+            math_file.close()
+        except Exception as e:
+            print("Exception while processing ", pdf_name, " ", page_num, " ", sys.exc_info(), e)
 
 def convert_to_binary(image):
 
