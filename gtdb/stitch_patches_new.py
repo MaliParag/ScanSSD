@@ -166,9 +166,6 @@ def voting_algo(params):
 
     image = cv2.imread(os.path.join(args.home_images,pdf_name,str(int(page_num+1))+".png"))
 
-    nms_regions = perform_nms(math_regions)
-    return nms_regions
-
     # vote for the regions
     votes = vote_for_regions(args, math_regions, image)
 
