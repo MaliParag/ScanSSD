@@ -12,6 +12,8 @@ from torchvision import datasets, transforms
 from torch.utils.data import Dataset, DataLoader
 from data import *
 import shutil
+import torch.nn as nn
+
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')
 parser.add_argument('--trained_model', default='weights/ssd300_GTDB_990.pth',
@@ -217,7 +219,7 @@ def test_gtdb():
 
     logging.debug(net)
     net.to(gpu_id)
-
+    #net = nn.DataParallel(net)
     # TODO: find a way to map location on the go
     net.load_state_dict(torch.load(args.trained_model, map_location={'cuda:1':'cuda:0'}))
     net.eval()
@@ -225,7 +227,7 @@ def test_gtdb():
 
     #testset = GTDBDetection(args.dataset_root, 'processed_train', None, GTDBAnnotationTransform())
     dataset = GTDBDetection(args, args.test_data, split='test',
-                            transform=BaseTransform(net.size, (246,246,246)),
+                            transform=BaseTransform(args.model_type, (246,246,246)),
                             target_transform=GTDBAnnotationTransform())
 
     if args.cuda:
@@ -234,7 +236,7 @@ def test_gtdb():
 
     # evaluation
     test_net_batch(args, net, gpu_id, dataset,
-                   BaseTransform(net.size, (246,246,246)),
+                   BaseTransform(args.model_type, (246,246,246)),
                    thresh=args.visual_threshold)
 
 
