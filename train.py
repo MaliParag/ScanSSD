@@ -44,7 +44,7 @@ parser.add_argument('--start_iter', default=0, type=int,
                     help='Resume training at this iter')
 parser.add_argument('--num_workers', default=4, type=int,
                     help='Number of workers used in data loading')
-parser.add_argument('--cuda', default=True, type=bool,
+parser.add_argument('--cuda', default=False, type=bool,
                     help='Use CUDA to train model')
 parser.add_argument('--lr', '--learning-rate', default=1e-4, type=float,
                     help='initial learning rate')
@@ -80,7 +80,7 @@ parser.add_argument('--kernel', default="3 3", type=int, nargs='+',
                     help='Kernel size for feature layers: 3 3 or 1 5')
 parser.add_argument('--padding', default="1 1", type=int, nargs='+',
                     help='Padding for feature layers: 1 1 or 0 2')
-parser.add_argument('--neg_mining', default=True, type=bool,
+parser.add_argument('--neg_mining', default=False, type=bool,
                     help='Whether or not to use hard negative mining with ratio 1:3')
 parser.add_argument('--log_dir', default="logs", type=str,
                     help='dir to save the logs')
