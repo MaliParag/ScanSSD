@@ -13,6 +13,7 @@ from scipy.ndimage.measurements import label
 from gtdb import fit_box
 from gtdb import feature_extractor
 import argparse
+import shutil
 
 # Default parameters for thr GTDB dataset
 def parse_args():
@@ -202,6 +203,9 @@ def voting_algo(params):
 def stitch(args):
     pdf_list = []
     pdf_names_file = open(args.data_file, 'r')
+
+    if os.path.exists(args.output_dir):
+        shutil.rmtree(args.output_dir)
 
     for pdf_name in pdf_names_file:
         pdf_name = pdf_name.strip()
