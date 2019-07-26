@@ -137,9 +137,14 @@ def train():
         ct += 1
 
 
+    if args.cuda:
+        ssd_net = torch.nn.DataParallel(ssd_net)
+        # ssd_net = ssd_net.to(gpu_id)
+        cudnn.benchmark = True
+
     if args.resume:
         logging.debug('Resuming training, loading {}...'.format(args.resume))
-        ssd_net.load_weights(args.resume)
+        ssd_net.load_state_dict(torch.load(args.resume))
     else:
         vgg_weights = torch.load("base_weights/" + args.basenet)
         logging.debug('Loading base network...')
@@ -171,10 +176,6 @@ def train():
     #args, cfg, overlap_thresh, bkg_label, neg_pos
     criterion = MultiBoxLoss(args, cfg, 0.5, 0, 3)
 
-    if args.cuda:
-        ssd_net = torch.nn.DataParallel(ssd_net)
-        #ssd_net = ssd_net.to(gpu_id)
-        cudnn.benchmark = True
 
     ssd_net.train()
     # loss counters

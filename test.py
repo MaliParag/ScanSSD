@@ -219,7 +219,7 @@ def test_gtdb():
 
     logging.debug(net)
     net.to(gpu_id)
-    #net = nn.DataParallel(net)
+    net = nn.DataParallel(net)
     # TODO: find a way to map location on the go
     net.load_state_dict(torch.load(args.trained_model, map_location={'cuda:1':'cuda:0'}))
     net.eval()
