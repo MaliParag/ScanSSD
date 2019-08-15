@@ -92,13 +92,13 @@ ENV/
 .remote-sync.json
 
 # weights
-weights/
+weights
 
 #DS_Store
 .DS_Store
 
 # dev stuff
-eval/
+eval
 eval.ipynb
 dev.ipynb
 .vscode/

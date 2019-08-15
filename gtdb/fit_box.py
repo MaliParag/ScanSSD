@@ -16,6 +16,7 @@ def adjust_box_p(args):
     return adjust_box(im_bw, box)
 
 def adjust_box(im_bw, box):
+    box = [int(np.round(x)) for x in box]
     box = contract(im_bw, box)
     box = expand(im_bw, box)
     return box

@@ -21,11 +21,13 @@ import shutil
 import time
 from collections import OrderedDict
 from collections import deque
+from sklearn.cluster import AgglomerativeClustering
 
 # Default parameters for thr GTDB dataset
 intermediate_width = 4800
 intermediate_height = 6000
-crop_size = 1200
+
+crop_size = 1800 #TODO
 
 final_width = -1
 final_height = -1 # because initial image size is 300 * 300 even for 512 * 512 network
@@ -500,11 +502,31 @@ def char_algo(math_regions, char_data, image, algorithm='equal', thresh_votes=20
     return boxes
 
 
+def clustering(math_regions, char_data, image, algorithm, thresh_votes):
+
+    centers = []
+    for math_region in math_regions:
+        center = [(math_region[0]+math_region[2])/2, (math_region[1]+math_region[3])/2]
+        centers.append(center)
+
+    clustering = AgglomerativeClustering().fit(centers)
+
+    labels = np.unique(clustering.labels_)
+
+    for label in labels:
+        regions = math_regions[labels==label]
+
+    pass
+
+
 def voting_algo(math_regions, char_data, image, pdf_name, page_num,
                 output_dir, algorithm='equal', thresh_votes=20):
 
     if algorithm == 'char_algo':
         return char_algo(math_regions, char_data, image, algorithm, thresh_votes)
+
+    if algorithm == 'clustering':
+        return clustering(math_regions, char_data, image, algorithm, thresh_votes)
 
     # vote for the regions
     votes = vote_for_regions(math_regions, image, algorithm, thresh_votes)
@@ -932,8 +954,8 @@ if __name__ == '__main__':
         visualize = 0
         projections = 0
 
-    final_width = 300
-    final_height = 300
+    final_width = 512
+    final_height = 512
 
     home_data = "/home/psm2208/data/GTDB/"
     home_eval = "/home/psm2208/code/eval/"

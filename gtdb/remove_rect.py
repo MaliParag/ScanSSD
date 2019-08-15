@@ -13,24 +13,7 @@ from scipy.ndimage.measurements import label
 import scipy.ndimage as ndimage
 import copy
 import shutil
-
-def check_inside(rectA, rectB):
-
-    # returns True if A is inside B
-    #left, top, right, bottom
-    #If any of the sides from A are outside of B
-    if rectA[3] < rectB[1]: # if bottom of rectA is less than top of rectB
-        return False
-    if rectA[1] > rectB[3]: # if top of rectA is greater than bottom of rectB
-        return False
-    if rectA[2] < rectB[0]: # if right of rectA is less than left of rectB
-        return False
-    if rectA[0] > rectB[2]: # if left of rectangleA is greater than right of rectB
-        return False
-
-    #If none of the sides from A are outside B
-    return True
-
+from gtdb import  box_utils
 
 def remove(args):
 
@@ -40,8 +23,8 @@ def remove(args):
         valid = [True] * page_math.shape[0]
 
         for i, m1 in enumerate(page_math):
-            for j, m2 in enumerate(page_math[i+1:]):
-                if check_inside(m1, m2):
+            for j, m2 in enumerate(page_math):
+                if i!=j and box_utils.check_inside(m1, m2):
                     valid[i] = False
                     break
 
@@ -103,8 +86,8 @@ if __name__ == "__main__":
     home_images = "/home/psm2208/data/GTDB/images/"
     home_anno = "/home/psm2208/data/GTDB/annotations/"
 
-    math_dir = "/home/psm2208/data/GTDB/annotationsV2"
-    output_dir = "/home/psm2208/data/GTDB/annotationsV3"
+    math_dir = "/home/psm2208/data/GTDB/relations_train_adjust_csv"
+    output_dir = "/home/psm2208/data/GTDB/relations_train_adjust_csv_removed"
 
     type = sys.argv[1]
 

@@ -48,6 +48,7 @@ def parse_args():
     parser.add_argument('--home_char', default='/home/psm2208/data/GTDB/char_annotations/', type = str,
                         help='Char anno dir')
     parser.add_argument('--num_workers', default=4, type=int, help='Number of workers')
+    parser.add_argument('--type', default='math', type=str, help='Math or text')
 
     return parser.parse_args()
 
@@ -69,6 +70,22 @@ def read_math(args, pdf_name):
 
     return data.astype(int)
 
+def read_char(args, pdf_name):
+
+    data = []
+
+    path = os.path.join(args.home_char, pdf_name + ".char")
+
+    with open(path, 'r') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        for row in reader:
+            #print('row is ' + str(row[1]))
+            # if entry is not in map
+            data.append(row)
+
+    return np.array(data)
+
+
 def adjust(params):
 
     args, math_regions, pdf_name, page_num = params
@@ -86,6 +103,34 @@ def adjust(params):
 
     return new_math
 
+def adjust_char(params):
+
+    try:
+        args, char_regions, pdf_name, page_num = params
+        print('Char processing ', pdf_name, ' > ', page_num)
+
+        image = cv2.imread(os.path.join(args.home_images, pdf_name, str(int(page_num) + 1) + ".png"))
+        im_bw = fit_box.convert_to_binary(image)
+
+        new_chars = []
+
+        for char in char_regions:
+
+            bb_char = [char[2],char[3],char[4],char[5]]
+            bb_char = [int(float(k)) for k in bb_char]
+            box = fit_box.adjust_box(im_bw, bb_char)
+            if feature_extractor.width(box) > 0 and feature_extractor.height(box) > 0:
+                char[1] = box[0]
+                char[2] = box[1]
+                char[3] = box[2]
+                char[4] = box[3]
+                new_chars.append(char)
+
+        return new_chars
+    except Exception as e:
+        print('Error while processing ', pdf_name, ' > ', page_num, sys.exc_info())
+        return []
+
 def adjust_boxes(args):
     pdf_list = []
     pdf_names_file = open(args.data_file, 'r')
@@ -96,40 +141,65 @@ def adjust_boxes(args):
         if pdf_name != '':
             pdf_list.append(pdf_name)
 
-    math_regions = {}
+    regions = {}
 
     for pdf_name in pdf_list:
-        math_regions[pdf_name] = read_math(args, pdf_name)
+        if args.type == 'char':
+            regions[pdf_name] = read_char(args, pdf_name)
+        else:
+            regions[pdf_name] = read_math(args, pdf_name)
 
     voting_ip_list = []
+
     for pdf_name in pdf_list:
 
-        pages = np.unique(math_regions[pdf_name][:, 0])
+        pages = np.unique(regions[pdf_name][:, 0])
 
         #args, math_regions, pdf_name, page_num
         for page_num in pages:
-            current_math = math_regions[pdf_name][math_regions[pdf_name][:,0] == page_num]
-            voting_ip_list.append([args, np.delete(current_math, 0, 1), pdf_name, page_num])
+
+            current_math = regions[pdf_name][regions[pdf_name][:,0] == page_num]
+
+            if args.type == 'math':
+                current_math = np.delete(current_math, 0, 1)
+
+            voting_ip_list.append([args, current_math, pdf_name, page_num])
 
     pool = Pool(processes=args.num_workers)
-    out = pool.map(adjust, voting_ip_list)
+
+    if args.type == 'math':
+        out = pool.map(adjust, voting_ip_list)
+    else:
+        out = pool.map(adjust_char, voting_ip_list)
 
     for ip, final_math in zip(voting_ip_list, out):
         pdf_name = ip[2]
         page_num = ip[3]
 
-        col = np.array([int(page_num)] * len(final_math))
-        final_math = np.concatenate((col[:, np.newaxis], final_math), axis=1)
+        if args.type == 'math':
+            col = np.array([int(page_num)] * len(final_math))
+            final_math = np.concatenate((col[:, np.newaxis], final_math), axis=1)
 
         math_file_path = os.path.join(args.output_dir, pdf_name + '.csv')
 
         if not os.path.exists(os.path.dirname(math_file_path)):
             os.makedirs(os.path.dirname(math_file_path))
 
-        math_file = open(math_file_path, 'a')
 
-        np.savetxt(math_file, final_math, fmt='%.2f', delimiter=',')
-        math_file.close()
+        if args.type == 'math':
+            math_file = open(math_file_path, 'a')
+
+            np.savetxt(math_file, final_math, fmt='%.2f', delimiter=',')
+            math_file.close()
+
+        else:
+
+            with open(math_file_path, 'a') as csvfile:
+                writer = csv.writer(csvfile, delimiter=",")
+
+                for math_region in final_math:
+                    writer.writerow(math_region)
+
 
 if __name__ == '__main__':
 

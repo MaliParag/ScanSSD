@@ -191,8 +191,10 @@ def nms(boxes, scores, overlap=0.45, top_k=200):
     """
 
     keep = scores.new(scores.size(0)).zero_().long()
+    count = 0
+
     if boxes.numel() == 0:
-        return keep
+        return keep, count
     x1 = boxes[:, 0]
     y1 = boxes[:, 1]
     x2 = boxes[:, 2]
@@ -209,7 +211,6 @@ def nms(boxes, scores, overlap=0.45, top_k=200):
     h = boxes.new()
 
     # keep = torch.Tensor()
-    count = 0
     while idx.numel() > 0:
         i = idx[-1]  # index of current largest val
         # keep.append(i)
@@ -243,3 +244,11 @@ def nms(boxes, scores, overlap=0.45, top_k=200):
         # keep only elements with an IoU <= overlap
         idx = idx[IoU.le(overlap)]
     return keep, count
+
+
+# TEST
+if "__name__" == "__main__":
+    boxes = np.array([])
+    scores = np.array([])
+    abs = nms(boxes=boxes,scores=scores)
+    pass

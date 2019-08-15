@@ -1,6 +1,19 @@
 from collections import OrderedDict
 import gtdb.feature_extractor
 
+
+def check_inside(rectA, rectB):
+
+    # returns True if A is inside B
+    if rectA[0] >= rectB[0] and\
+       rectA[1] >= rectB[1] and\
+       rectA[2] <= rectB[2] and\
+       rectA[3] <= rectB[3]:
+
+       return True
+
+    return False
+
 # check if two rectangles intersect
 def intersects(first, other):
     return not (first[2] < other[0] or

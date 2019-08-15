@@ -43,6 +43,8 @@ def parse_args():
     parser.add_argument('--stitching_algo', default='equal', type=str, help='Stitching algo to use')
     parser.add_argument('--algo_threshold', default=30, type=int, help='Stitching algo threshold')
     parser.add_argument('--num_workers', default=4, type=int, help='Number of workers')
+    parser.add_argument('--preprocess', type=bool, help='Whether to fit math regions before pooling')
+    parser.add_argument('--postprocess', type=bool, help='Whether to fit math regions after pooling')
 
     return parser.parse_args()
 
@@ -160,6 +162,18 @@ def perform_nms(math_regions):
 
     return math_regions.tolist()
 
+def preprocess_math_regions(math_regions, image):
+
+    im_bw = convert_to_binary(image)
+
+    preprocessed_math_regions = []
+
+    for box in math_regions:
+        box = fit_box.adjust_box(im_bw, box)
+        preprocessed_math_regions.append(box)
+
+    return preprocessed_math_regions
+
 
 def voting_algo(params):
 
@@ -167,6 +181,9 @@ def voting_algo(params):
     print('Processing ', pdf_name, ' > ', page_num)
 
     image = cv2.imread(os.path.join(args.home_images,pdf_name,str(int(page_num+1))+".png"))
+
+    if args.preprocess:
+        math_regions = preprocess_math_regions(math_regions, image)
 
     # vote for the regions
     votes = vote_for_regions(args, math_regions, image)
@@ -189,8 +206,9 @@ def voting_algo(params):
 
         box = [min(pixels[:, 0]), min(pixels[:, 1]), max(pixels[:, 0]), max(pixels[:, 1])]
 
-        # expansion to correctly fit the region
-        box = fit_box.adjust_box(im_bw, box)
+        if args.postprocess:
+            # expansion to correctly fit the region
+            box = fit_box.adjust_box(im_bw, box)
 
         # if box has 0 width or height, do not add it in the final detections
         if feature_extractor.width(box) < 1 or feature_extractor.height(box) < 1:
@@ -271,4 +289,5 @@ if __name__ == '__main__':
 
     # TODO: use argparser
     args = parse_args()
+    print('Using : ', args)
     stitch(args)

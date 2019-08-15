@@ -3,9 +3,14 @@
 # read the image
 import os
 import sys
+sys.path.extend(['/home/psm2208/code', '/home/psm2208/code'])
+
 import csv
 from multiprocessing import Pool
 from IOU_lib import IOUevaluater
+import numpy as np
+import copy
+from gtdb import box_utils
 
 # check if two rectangles intersect
 def intersects(first, other):
@@ -19,23 +24,49 @@ def read_data(training_pdf_names, char_dir, gt_math_dir, det_math_dir):
     char_bbs = {}
     args = []
     total_math_char = 0
+    #
+    # adjust_char_dir = '/home/psm2208/data/GTDB/char_annotationsV3/'
+    #
+    # adjust_data = {}
+    # for filename in training_pdf_names:
+    #
+    #     path = os.path.join(adjust_char_dir, filename + ".csv")
+    #
+    #     data = np.genfromtxt(path, delimiter=',')
+    #
+    #     # if there is only one entry convert it to correct form required
+    #     if len(data.shape) == 1:
+    #         data = data.reshape(1, -1)
+    #
+    #     adjust_data[filename] = data
 
     for filename in training_pdf_names:
 
-        path = os.path.join(char_dir, filename + ".char")
+        path = os.path.join(char_dir, filename + ".csv")
+        print('Processing ' + path)
+        count = 0
+
+       #data = adjust_data[filename]
 
         map = {}
         with open(path, 'r') as csvfile:
             reader = csv.reader(csvfile, delimiter=',')
             for row in reader:
+                #print('row is ' + str(row[1]))
                 # if entry is not in map
-                if row[0] not in map:
-                    map[row[0]] = []
+                if str(int(float(row[0]))) not in map:
+                    map[str(int(float(row[0])))] = []
 
                 if row[6] == 'MATH_SYMBOL':
                     total_math_char = total_math_char + 1
 
-                map[row[0]].append(row)
+                # row[2] = data[count][1]
+                # row[3] = data[count][2]
+                # row[4] = data[count][3]
+                # row[5] = data[count][4]
+
+                map[str(int(float(row[0])))].append(row)
+                count = count + 1
 
         char_bbs[filename] = map
 
@@ -51,11 +82,11 @@ def read_data(training_pdf_names, char_dir, gt_math_dir, det_math_dir):
             reader = csv.reader(csvfile, delimiter=',')
             for row in reader:
                 # if entry is not in map
-                if row[0] not in map:
-                    map[row[0]] = []
+                if str(int(float(row[0]))) not in map:
+                    map[str(int(float(row[0])))] = []
 
 
-                map[row[0]].append(row)
+                map[str(int(float(row[0])))].append(row)
 
         det_math_bbs[filename] = map
 
@@ -70,10 +101,10 @@ def read_data(training_pdf_names, char_dir, gt_math_dir, det_math_dir):
             reader = csv.reader(csvfile, delimiter=',')
             for row in reader:
                 # if entry is not in map
-                if row[0] not in map:
-                    map[row[0]] = []
+                if str(int(float(row[0]))) not in map:
+                    map[str(int(float(row[0])))] = []
 
-                map[row[0]].append(row)
+                map[str(int(float(row[0])))].append(row)
 
         gt_math_bbs[filename] = map
 
@@ -121,11 +152,11 @@ def char_level_eval(training_pdf_names, total_math_char, gt_math_bbs, det_math_b
 def character_level_score(args):
 
     filename, det_math_bbs, char_bbs, gt_math_bbs = args
-    detected_char_count = 0
+    detected_math_char_count = 0
     text_char_count = 0
 
     for char_info in char_bbs:
-        char_bb = [float(char_info[2]), float(char_info[3]), float(char_info[4]), float(char_info[5])]
+        char_bb = [float(char_info[1]), float(char_info[2]), float(char_info[3]), float(char_info[4])]
 
         for current_math_bb in det_math_bbs:
 
@@ -135,17 +166,17 @@ def character_level_score(args):
             if intersects(char_bb, math_bb):
 
                 if char_info[6] == 'MATH_SYMBOL':
-                    detected_char_count = detected_char_count + 1
+                    detected_math_char_count = detected_math_char_count + 1
                     break
                 else:
                     text_char_count = text_char_count + 1
 
-    return detected_char_count, text_char_count
+    return detected_math_char_count, text_char_count
 
 def box_level_granular_eval(training_pdf_names, total_math_char, gt_math_dir, det_math_dir,
-                            gt_math_bbs, det_math_bbs, char_bbs):
+                            gt_math_bbs, det_math_bbs, char_bbs, test_gt_math_dir):
 
-    _, _, detailed_detections = IOUevaluater.IOUeval(gt_math_dir, det_math_dir)
+    _, _, detailed_detections = IOUevaluater.IOUeval(test_gt_math_dir, det_math_dir)
     assign_chars_to_math_boxes(gt_math_bbs, char_bbs)
     assign_chars_to_math_boxes(det_math_bbs, char_bbs)
 
@@ -167,26 +198,34 @@ def box_level_granular_eval(training_pdf_names, total_math_char, gt_math_dir, de
 
             #DET for recall
             for det in coarse:
-                if gt_math_bbs[filename][str(page)][int(det[3:])-1][5] == 1:
+                if gt_math_bbs[filename][str(int(float(page)))][int(det[3:])-1][5] == 1:
                     single_char_det[0] = single_char_det[0] + 1
                 else:
                     multi_char_det[0] = multi_char_det[0] + 1
 
             for det in fine:
-                if gt_math_bbs[filename][str(page)][int(det[3:])-1][5] == 1:
+                if gt_math_bbs[filename][str(int(float(page)))][int(det[3:])-1][5] == 1:
                     single_char_det[1] = single_char_det[1] + 1
                 else:
                     multi_char_det[1] = multi_char_det[1] + 1
 
             # DET for precision
-            for det in det_math_bbs[filename][str(page)]:
+            for det in det_math_bbs[filename][str(int(float(page)))]:
                 if det[5] == 1:
                     total_single_char_det = total_single_char_det + 1
                 else:
                     total_multi_char_det = total_multi_char_det + 1
 
-            # GT
-            for gt in gt_math_bbs[filename][str(page)]:
+            #TODO
+            # for gt in gt_math_bbs[filename][str(int(float(page)))]:
+            #     if gt[5] == 1:
+            #         single_char_gt = single_char_gt + 1
+            #     else:
+            #         multi_char_gt = multi_char_gt + 1
+
+        # GT
+        for page in gt_math_bbs[filename]:
+           for gt in gt_math_bbs[filename][str(int(float(page)))]:
                 if gt[5] == 1:
                     single_char_gt = single_char_gt + 1
                 else:
@@ -261,7 +300,7 @@ def find_merged_regions(training_pdf_names, gt_math_boxes, det_math_boxes):
                     gt_bb = [float(gt[1]),float(gt[2]),
                              float(gt[3]),float(gt[4])]
 
-                    if intersects(det_bb, gt_bb):
+                    if box_utils.check_inside(gt_bb, det_bb):
                         count = count + 1
 
                     if count > 1:
@@ -277,8 +316,9 @@ def assign_chars_to_math_boxes(all_math_boxes, all_char_bbs):
     for pdf_name in all_math_boxes:
         for page in all_math_boxes[pdf_name]:
 
+            #print('Assigning ', pdf_name, page)
             math_boxes = all_math_boxes[pdf_name][page]
-            char_bbs = all_char_bbs[pdf_name][page]
+            char_bbs = all_char_bbs[pdf_name][str(int(float(page)))]
 
             for math_box in math_boxes:
                 math_box.append(0)
@@ -307,21 +347,24 @@ if __name__ == '__main__':
         pdf_name = pdf_name.strip()
         if pdf_name != '':
             training_pdf_names_list.append(pdf_name)
-
     training_pdf_names.close()
 
     detected_math_dir = sys.argv[2] #'/home/psm2208/code/eval/final_submission/Test/'
     gt_math_dir = sys.argv[3]  # '/home/psm2208/data/GTDB/annotations/'
 
-    gt_char_dir = '/home/psm2208/data/GTDB/char_annotations/'
+    gt_char_dir = sys.argv[4]#'/home/psm2208/data/GTDB/char_annotations/'
+    test_gt_math_dir = sys.argv[5] #/home/psm2208/Workspace/Task3_Detection/Test/test_math/
+
     image_dir = '/home/psm2208/data/GTDB/images/'
 
     training_pdf_names, total_math_char, gt_math_bbs, det_math_bbs, char_bbs = \
         read_data(training_pdf_names_list, gt_char_dir, gt_math_dir, detected_math_dir)
 
-    char_level_eval(training_pdf_names, total_math_char, gt_math_bbs, det_math_bbs, char_bbs)
+    char_level_eval(training_pdf_names, total_math_char, copy.deepcopy(gt_math_bbs),
+                    copy.deepcopy(det_math_bbs), copy.deepcopy(char_bbs))
 
     box_level_granular_eval(training_pdf_names, total_math_char, gt_math_dir,
-                            detected_math_dir, gt_math_bbs, det_math_bbs, char_bbs)
+                            detected_math_dir, gt_math_bbs,
+                            det_math_bbs, char_bbs,test_gt_math_dir)
 
-    find_merged_regions(training_pdf_names, gt_math_bbs, det_math_bbs)
+    find_merged_regions(training_pdf_names, copy.deepcopy(gt_math_bbs), copy.deepcopy(det_math_bbs))
