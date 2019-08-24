@@ -1,6 +1,6 @@
 # Author: Parag Mali
 # This script stitches back the output generated on the image patches (sub-images)
-
+# Note: It works from page level detection results.
 # read the image
 import sys
 sys.path.extend(['/home/psm2208/code', '/home/psm2208/code'])
@@ -19,8 +19,6 @@ from gtdb import box_utils
 from gtdb import feature_extractor
 import shutil
 import time
-from collections import OrderedDict
-from collections import deque
 from sklearn.cluster import AgglomerativeClustering
 
 # Default parameters for thr GTDB dataset
@@ -30,8 +28,7 @@ intermediate_height = 6000
 crop_size = 1800 #TODO
 
 final_width = -1
-final_height = -1 # because initial image size is 300 * 300 even for 512 * 512 network
-
+final_height = -1
 if_visualize = -1
 projections = -1
 
@@ -180,14 +177,6 @@ def combine_math_regions(args):
 
         # intital math regions
         math_regions_initial = np.copy(math_regions)
-
-        #math_regions = preprocess_math_regions(math_regions, image)
-
-        #pp_math_file = open(os.path.join(os.path.dirname(os.path.dirname(math_files_list[0])), page_num + '.ppm'), 'w')
-        #writer = csv.writer(pp_math_file, delimiter=",")
-
-        #for math_region in math_regions:
-        #   writer.writerow(math_region)
 
         processed_math_regions = np.copy(math_regions)
 
@@ -531,27 +520,8 @@ def voting_algo(math_regions, char_data, image, pdf_name, page_num,
     # vote for the regions
     votes = vote_for_regions(math_regions, image, algorithm, thresh_votes)
 
-    # TODO : Row info might be useful
-    # use image to find the rows where all values are zero
-    # use that info separate lines
-    # so, that math regions on different lines do not get merged
-    # This allows for horizontal merging, but skips vertical merging
-
-    #blank_rows = find_blank_rows(image, 0)
-
     if projections == 1:
         votes[rows_with_at_least_k_black_pixels(image)] = 0
-
-    # for blank rows, zero votes
-    # for box in blank_rows:
-    #    votes_regions[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = 0
-    #    image[int(box[1]):int(box[3]), int(box[0]):int(box[2])]=0
-    # blank_rows = find_blank_rows_h(image)
-    #
-    # # for blank rows, zero votes
-    # for row in blank_rows:
-    #     votes_regions[row] = 0
-    #     #image[row] = 0
 
     im_bw = convert_to_binary(image)
     structure = np.ones((3, 3), dtype=np.int)
@@ -578,28 +548,6 @@ def voting_algo(math_regions, char_data, image, pdf_name, page_num,
         if feature_extractor.width(box) < 1 or feature_extractor.height(box) < 1:
             continue
 
-        # if not np.all(votes[box[1]:box[3], box[0]:box[2]]):
-        #
-        #     ccs = np.unique(math_region_labels[box[1]:box[3], box[0]:box[2]])
-        #
-        #     # As the math regions are labels from low confidence to high confidence
-        #     # the last region in ccs is the highest confident region.
-        #     #TODO Need to apply NMS during this step
-        #     # if 50% overlap reject the box
-        #     # once NMS is done, do overlap-expand
-        #     # if it is horizontal overlap, check if horizontal edge of larger rectangle
-        #     # has more than 25% overlap then expand, otherwise do not expand
-        #     # Finally do cc edge correction
-        #     # Also, if horizontally very close merge the regions
-        #     regions = []
-        #     for cc in ccs:
-        #         regions.append(math_regions[int(cc)])
-        #
-        #     regions = perform_nms(np.array(regions))
-        #     boxes.extend(regions)
-        #
-        # else:
-        #     boxes.append(box)
         boxes.append(box)
 
     return boxes
@@ -645,20 +593,6 @@ def is_blank(cum_sum, current, n=30, thresh=3000):
     # It is not a blank row
     ret = False
 
-    # check above
-    # if (current > 0) and ((cum_sum[current] - cum_sum[current-1]) == 0):
-    #
-    #     a_thresh = thresh
-    #     if current < n:
-    #         val = cum_sum[current]
-    #         a_thresh = ((thresh/n) * (current + 1))
-    #     else:
-    #         val = cum_sum[current] - cum_sum[current-n]
-    #
-    #     # It is  a blank row
-    #     if val >= a_thresh:
-    #         ret = True
-
     # check below
     if (current < len(cum_sum)) and (cum_sum[current] - cum_sum[current-1]) == 0:
 
@@ -698,16 +632,6 @@ def find_blank_rows(image, line_spacing=1):
     rows = []
 
     indices = np.indices(im_bw.shape).T[:, :, [1, 0]]
-
-    # for i in range(ncomponents):
-    #
-    #     labels = (labeled == (i+1))
-    #     pixels = indices[labels.T]
-    #
-    #     box = [min(pixels[:, 0]), min(pixels[:, 1]), max(pixels[:, 0]), max(pixels[:, 1])]
-    #
-    #     if box[2] - box[0] > line_spacing:
-    #         rows.append(box)
 
     line_bbs = ndimage.find_objects(labeled)
     sizes = np.array([[bb.stop - bb.start for bb in line_bb]
@@ -897,14 +821,6 @@ def fusion_stitch_grid(filename, annotations_dir, output_dir,
     pool.close()
     pool.join()
 
-
-    # find intersecting math regions
-    #pool = Pool(processes=32)
-    #inter_math = pool.map(box_utils.find_intersecting_boxes, math_cache)
-
-    #pool.close()
-    #pool.join()
-
     fusion_list = []
 
     for i, page in enumerate(pages_list):
@@ -966,11 +882,3 @@ if __name__ == '__main__':
     stitch_patches(home_data + type, home_eval + dir_to_eval,
                    home_eval + dir_to_eval + "/" + algorithm + "_" + str(thresh),
                    home_images, home_anno, home_char, thresh)
-
-    #fusion_stitch_grid(home_data + type, home_eval + dir_to_eval,
-    #                   home_eval + dir_to_eval + "/" + algorithm + "_" + str(thresh),
-    #                   home_images, home_anno, home_char, thresh)
-
-    # patch_stitch("/home/psm2208/data/GTDB/test_pdf", "/home/psm2208/code/eval/Test_char_Focal_10_25",
-    #              "/home/psm2208/code/eval/Test_char_Focal_10_25/voting_equal_" + str(thresh),
-    #              '/home/psm2208/data/GTDB/images/', "/home/psm2208/data/GTDB/annotations/", thresh)

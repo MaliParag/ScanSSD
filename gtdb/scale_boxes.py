@@ -1,30 +1,18 @@
 # Author: Parag Mali
-# This script stitches back the output generated on the image patches (sub-images)
+# This script scales the detected boxes back to given width and height of the page
 
 # read the image
 import sys
 sys.path.extend(['/home/psm2208/code', '/home/psm2208/code'])
 import cv2
 import os
-import csv
 import numpy as np
-import utils.visualize as visualize
 from multiprocessing import Pool
-from cv2.dnn import NMSBoxes
-from scipy.ndimage.measurements import label
-import scipy.ndimage as ndimage
-import copy
-from gtdb import fit_box
-from gtdb import box_utils
 from gtdb import feature_extractor
-import shutil
-import time
-from collections import OrderedDict
-from collections import deque
 import argparse
 
-# Default parameters for thr GTDB dataset
 def parse_args():
+    # Default parameters
 
     parser = argparse.ArgumentParser(
         description='Stitching method')

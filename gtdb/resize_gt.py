@@ -1,6 +1,6 @@
 # Author: Parag Mali
-# This script divides a big image into smaller images using a sliding window.
-# It also divides corresponding bounding box annotations.
+# This script resizes ground truth based on the given final width and height
+# NOTE: It is no longer needed, as ground truth modification is done in the data loader
 
 # read the image
 import numpy as np

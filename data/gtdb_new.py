@@ -1,7 +1,9 @@
-"""GTDB Dataset Classes
-
-Original author: Parag Mali
 """
+Author: Parag Mali
+Data reader for the GTDB dataset
+Uses sliding windows to generate sub-images
+"""
+
 from .config import HOME
 import os.path as osp
 import sys
@@ -266,20 +268,6 @@ class GTDBDetection(data.Dataset):
         target = self.gen_targets(index)
         img = self.gen_image(index)
 
-        # Code to visualiza generated data
-        # fig, ax = plt.subplots(1)
-        # for box in target:
-        #     rect = patches.Rectangle((box[0], box[1]), box[2]-box[0], box[3] - box[1],
-        #                              linewidth=1, edgecolor='g', facecolor='none')
-        #     ax.add_patch(rect)
-        #
-        # plt.imshow(img)
-        # plt.show()
-        #
-        # import time
-        # filep = 'rer' + str(time.time()) + '.png'
-        # plt.savefig(filep.format(metadata[0]), dpi=300)
-
         height, width, channels = img.shape
 
         if self.target_transform is not None:
@@ -290,9 +278,7 @@ class GTDBDetection(data.Dataset):
             img, boxes, labels = self.transform(img, target[:, :4], target[:, 4])
             # to rgb
             img = img[:, :, (2, 1, 0)]
-            # img = img.transpose(2, 0, 1)
             target = np.hstack((boxes, np.expand_dims(labels, axis=1)))
 
 
         return torch.from_numpy(img).permute(2, 0, 1), target, metadata
-        # return torch.from_numpy(img), target, height, width

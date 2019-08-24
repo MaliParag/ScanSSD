@@ -1,7 +1,12 @@
+# Author: Parag Mali
+# This file performs postprocessing on the detection results
+# so that it perfectly contains the connected components
+
 import numpy as np
 import cv2
 
 def convert_to_binary(image):
+    # convert image to binary
 
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -16,6 +21,7 @@ def adjust_box_p(args):
     return adjust_box(im_bw, box)
 
 def adjust_box(im_bw, box):
+    # expand or contract the bounding box to fit the math expression
     box = [int(np.round(x)) for x in box]
     box = contract(im_bw, box)
     box = expand(im_bw, box)
@@ -42,10 +48,6 @@ def contract(im_bw, box):
     box[3] = bottom
 
     return box
-
-    # find first column with one pixel
-    # find last row with one pixel
-    # find last col with pixel
 
 def expand(im_bw, box):
 

@@ -1,24 +1,14 @@
+# Author: Parag Mali
+# This script reads ground truth to find the Symbol Layout Tree (SLT) bounding boxes
+
 import sys
 sys.path.extend(['/home/psm2208/code', '/home/psm2208/code'])
 import cv2
 import os
 import csv
 import numpy as np
-import utils.visualize as visualize
 from multiprocessing import Pool
-from cv2.dnn import NMSBoxes
-from scipy.ndimage.measurements import label
-import scipy.ndimage as ndimage
-import copy
 import shutil
-
-math_ocr = set(['1981', '1980', '0131', '142C', '1D3D'])
-                #'1C2D', '0132', '416E', '197C', '0130',
-                #'4169', '1C2B', '4166', '416B', '417A', '4170', '4172', '4178', '4161'])
-                #'4174',
-                #'4173', '416A', '4141', '4153', '426B', '1D80', '1A86', '1C2F', '4147', '4177',
-                #'4171', '1C2A', '4261', '4164', '4167', '4143', '14B7', '33D1', '0E81',
-                #'4272', '4162', '1B81', '414D', '4165', '4175', '4152', '4150', '4145', '4144'])
 
 def find_math(args):
 
@@ -46,9 +36,9 @@ def find_math(args):
 
                     char_map[row[-2]].add(row[1])
 
-                #elif row[-4] == 'MATH_SYMBOL':
-                #    if row[1] not in char_map:
-                #        char_map[row[1]] = set()
+                elif row[-4] == 'MATH_SYMBOL':
+                    if row[1] not in char_map:
+                        char_map[row[1]] = set()
 
         math_regions_chars = group_math(char_map)
         math_regions = create_bb(math_regions_chars, char_info)
@@ -59,12 +49,12 @@ def find_math(args):
         writer = csv.writer(open(output_file,"a"), delimiter=",")
 
 
-        with open(char_file) as csvfile:
-            char_reader = csv.reader(csvfile, delimiter=',')
-
-            for row in char_reader:
-                if row[-1] in math_ocr and row[0] not in multi_char_math:
-                    math_regions.append([row[2],row[3],row[4],row[5]])
+        # with open(char_file) as csvfile:
+        #     char_reader = csv.reader(csvfile, delimiter=',')
+        #
+        #     for row in char_reader:
+        #         if row[-1] in math_ocr and row[0] not in multi_char_math:
+        #             math_regions.append([row[2],row[3],row[4],row[5]])
 
         #math_regions = adjust_all(image, math_regions)
 
@@ -84,6 +74,7 @@ def create_bb(math_regions_chars, char_info):
     for region in math_regions_chars:
         box = []
 
+        count = 0
         for char_id in region:
 
             if len(box) == 0:
@@ -95,6 +86,9 @@ def create_bb(math_regions_chars, char_info):
                 box[2] = max(float(char_info[char_id][2]), box[2])  # left + width
                 box[3] = max(float(char_info[char_id][3]), box[3])  # top + height
 
+            count = count + 1
+
+        box.append(count)
         math_regions.append(box)
 
     return math_regions
@@ -261,9 +255,6 @@ def create_gt_math(filename, image_dir, char_dir, output_dir="/home/psm2208/data
                                                         #page_num + ".pmath")))
     pdf_names.close()
 
-    #for args in pages_list:
-    #   find_math(args)
-
     pool = Pool(processes=32)
     pool.map(find_math, pages_list)
     pool.close()
@@ -275,7 +266,7 @@ if __name__ == "__main__":
     home_images = "/home/psm2208/data/GTDB/images/"
     home_anno = "/home/psm2208/data/GTDB/annotations/"
     home_char = "/home/psm2208/data/GTDB/char_annotations/"
-    output_dir = "/home/psm2208/code/eval/relations_samsung/"
+    output_dir = "/home/psm2208/code/eval/tt_samsung_train/"
 
     type = sys.argv[1]
 

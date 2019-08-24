@@ -1,4 +1,6 @@
-# Rectangles after projection
+# Author: Parag Mali
+# This file contains functions to remove rectangles
+# that are inside other rectangles
 
 import sys
 sys.path.extend(['/home/psm2208/code', '/home/psm2208/code'])
@@ -62,7 +64,7 @@ def remove_rect(filename, math_dir, output_dir):
 
         if pdf_name != '':
             math_file = os.path.join(math_dir, pdf_name + ".csv")
-            math_regions = np.genfromtxt(math_file, delimiter=',', dtype=int)
+            math_regions = np.genfromtxt(math_file, delimiter=',', dtype=float)
 
             pages = np.unique(math_regions[:, 0])
 
@@ -86,8 +88,8 @@ if __name__ == "__main__":
     home_images = "/home/psm2208/data/GTDB/images/"
     home_anno = "/home/psm2208/data/GTDB/annotations/"
 
-    math_dir = "/home/psm2208/data/GTDB/relations_train_adjust_csv"
-    output_dir = "/home/psm2208/data/GTDB/relations_train_adjust_csv_removed"
+    math_dir = "/home/psm2208/code/eval/tt_samsung" #"/home/psm2208/data/GTDB/relations_train_adjust_csv"
+    output_dir = "/home/psm2208/code/eval/tt_samsung_removed" #"/home/psm2208/data/GTDB/relations_train_adjust_csv_removed"
 
     type = sys.argv[1]
 

@@ -2,18 +2,11 @@
 
 import sys
 sys.path.extend(['/home/psm2208/code', '/home/psm2208/code'])
-import cv2
 import os
 import csv
 import numpy as np
-import utils.visualize as visualize
 from multiprocessing import Pool
-from cv2.dnn import NMSBoxes
-from scipy.ndimage.measurements import label
-import scipy.ndimage as ndimage
-import copy
 import shutil
-import math
 from gtdb import feature_extractor
 
 def intersects(first, other):

@@ -1,6 +1,6 @@
 # Author: Parag Mali
+# This file contains functions that calculate character level detection results
 
-# read the image
 import os
 import sys
 sys.path.extend(['/home/psm2208/code', '/home/psm2208/code'])
@@ -8,7 +8,6 @@ sys.path.extend(['/home/psm2208/code', '/home/psm2208/code'])
 import csv
 from multiprocessing import Pool
 from IOU_lib import IOUevaluater
-import numpy as np
 import copy
 from gtdb import box_utils
 
@@ -24,21 +23,6 @@ def read_data(training_pdf_names, char_dir, gt_math_dir, det_math_dir):
     char_bbs = {}
     args = []
     total_math_char = 0
-    #
-    # adjust_char_dir = '/home/psm2208/data/GTDB/char_annotationsV3/'
-    #
-    # adjust_data = {}
-    # for filename in training_pdf_names:
-    #
-    #     path = os.path.join(adjust_char_dir, filename + ".csv")
-    #
-    #     data = np.genfromtxt(path, delimiter=',')
-    #
-    #     # if there is only one entry convert it to correct form required
-    #     if len(data.shape) == 1:
-    #         data = data.reshape(1, -1)
-    #
-    #     adjust_data[filename] = data
 
     for filename in training_pdf_names:
 
@@ -163,7 +147,7 @@ def character_level_score(args):
             math_bb = [float(current_math_bb[1]),float(current_math_bb[2]),
                        float(current_math_bb[3]),float(current_math_bb[4])]
 
-            if intersects(char_bb, math_bb):
+            if box_utils.check_inside(char_bb, math_bb): #TODO
 
                 if char_info[6] == 'MATH_SYMBOL':
                     detected_math_char_count = detected_math_char_count + 1
@@ -198,23 +182,23 @@ def box_level_granular_eval(training_pdf_names, total_math_char, gt_math_dir, de
 
             #DET for recall
             for det in coarse:
-                if gt_math_bbs[filename][str(int(float(page)))][int(det[3:])-1][5] == 1:
-                    single_char_det[0] = single_char_det[0] + 1
-                else:
+                if gt_math_bbs[filename][str(int(float(page)))][int(det[3:])-1][5] > 1:
                     multi_char_det[0] = multi_char_det[0] + 1
+                else:
+                    single_char_det[0] = single_char_det[0] + 1
 
             for det in fine:
-                if gt_math_bbs[filename][str(int(float(page)))][int(det[3:])-1][5] == 1:
-                    single_char_det[1] = single_char_det[1] + 1
-                else:
+                if gt_math_bbs[filename][str(int(float(page)))][int(det[3:])-1][5] > 1:
                     multi_char_det[1] = multi_char_det[1] + 1
+                else:
+                    single_char_det[1] = single_char_det[1] + 1
 
             # DET for precision
             for det in det_math_bbs[filename][str(int(float(page)))]:
-                if det[5] == 1:
-                    total_single_char_det = total_single_char_det + 1
-                else:
+                if det[5] > 1:
                     total_multi_char_det = total_multi_char_det + 1
+                else:
+                    total_single_char_det = total_single_char_det + 1
 
             #TODO
             # for gt in gt_math_bbs[filename][str(int(float(page)))]:
@@ -226,11 +210,10 @@ def box_level_granular_eval(training_pdf_names, total_math_char, gt_math_dir, de
         # GT
         for page in gt_math_bbs[filename]:
            for gt in gt_math_bbs[filename][str(int(float(page)))]:
-                if gt[5] == 1:
-                    single_char_gt = single_char_gt + 1
-                else:
+                if gt[5] > 1:
                     multi_char_gt = multi_char_gt + 1
-
+                else:
+                    single_char_gt = single_char_gt + 1
 
     # single char scores - coarse
     # precision
@@ -326,13 +309,13 @@ def assign_chars_to_math_boxes(all_math_boxes, all_char_bbs):
             for char_info in char_bbs:
                 for math_bb in math_boxes:
 
-                    current_char_bb = [float(char_info[2]), float(char_info[3]),
-                                       float(char_info[4]), float(char_info[5])]
+                    current_char_bb = [float(char_info[1]), float(char_info[2]), #TODO index from 1
+                                       float(char_info[3]), float(char_info[4])]
 
                     current_math_bb = [float(math_bb[1]),float(math_bb[2]),
                                        float(math_bb[3]),float(math_bb[4])]
 
-                    if intersects(current_char_bb, current_math_bb):
+                    if box_utils.check_inside(current_char_bb, current_math_bb):
                         math_bb[-1] = math_bb[-1] + 1
 
 

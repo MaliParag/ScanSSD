@@ -1,6 +1,7 @@
 # Author: Parag Mali
 # This script divides a big image into smaller images using a sliding window.
 # It also divides corresponding bounding box annotations.
+# NOTE: This file is no longer needed as sub-images are generated in data-loader
 
 # read the image
 import numpy as np

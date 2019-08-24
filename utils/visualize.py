@@ -1,3 +1,7 @@
+'''
+This file contains functions to visualize the heatmap and detected bounding boxes
+'''
+
 import matplotlib
 matplotlib.use('Agg')
 
@@ -6,7 +10,6 @@ import matplotlib.patches as patches
 import os
 import numpy as np
 import cv2
-
 
 def draw_stitched_boxes(im, data, outpath):
 
@@ -100,8 +103,8 @@ def draw_all_boxes(im, data, recognized_boxes, gt_boxes, outpath):
 def draw_boxes_cv(image, recognized_boxes, gt_boxes, outpath):
 
     '''
-    :param image:
-    :param recognized_boxes:
+    :param image
+    :param recognized_boxes
     :param outpath: save as outpath. Should be complete image path with extension
     :return:
     '''
@@ -158,15 +161,6 @@ def draw_boxes(args, im, recognized_boxes, recognized_scores, boxes, confs, scal
     # Create figure and axes
     fig,ax = plt.subplots(1)
     scale = scale.cpu().numpy()
-
-    # TODO: Added for debugging. Assuming all dimensions scale factor is same
-    # For debug heatmap
-    #boxes = boxes.cpu().numpy() * scale[0]
-    #confs = confs.cpu().numpy().reshape(-1, 1)
-    #data = np.append(boxes, confs, 1)
-
-    # sort based on the confs. Confs is column 4
-    # data = data[data[:,4].argsort()]
 
     # Display the image
     ax.imshow(im)

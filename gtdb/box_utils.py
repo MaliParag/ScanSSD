@@ -1,6 +1,7 @@
+# Author: Parag Mali
+# This file contains many common operations on the bounding boxes like finding intersection
 from collections import OrderedDict
 import gtdb.feature_extractor
-
 
 def check_inside(rectA, rectB):
 

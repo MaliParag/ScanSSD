@@ -1,5 +1,6 @@
 # Author: Parag Mali
 # This script stitches back the output generated on the image patches (sub-images)
+# This works from PDF level detection results
 
 # read the image
 import sys

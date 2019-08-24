@@ -16,14 +16,6 @@ exp_cfg = {
         'num_classes': 2,
         'lr_steps': (80000, 100000, 120000),
 
-        # 'max_iter': 120000,
-        # 'feature_maps': [38, 19, 10, 5, 3, 1],
-        # 'min_dim': 300,
-        # 'steps': [8, 16, 32, 64, 100, 300],
-        # 'min_sizes': [5, 60, 111, 162, 213, 264],
-        # 'max_sizes': [60, 111, 162, 213, 264, 315],
-        # 'aspect_ratios': [[2, 3, 5], [2, 3, 5, 7], [2, 3, 5, 7], [2, 3], [2], [2]],
-
         'max_iter': 120000,
         'feature_maps': [64, 32, 16, 8, 4, 2, 1],
         'min_dim': 512,
@@ -37,7 +29,6 @@ exp_cfg = {
         'name': 'GTDB',
 
         'is_vertical_prior_boxes_enabled': True,
-        #'is_vertical_prior_boxes_enabled': False,
 
         'mbox': {
             '512': [8, 10, 10, 6, 6, 4, 4],

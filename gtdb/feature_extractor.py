@@ -1,3 +1,7 @@
+# Author: Parag Mali
+# This file contains functions to extract a set of features from two given
+# bounding boxes (eg. Geometric features)
+
 import math
 
 def extract_features(box1, box2, label=1, test=False):

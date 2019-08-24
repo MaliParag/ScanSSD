@@ -1,4 +1,6 @@
 # Author: Parag Mali
+# This script generates page level annotations from the PDF level annotations
+# provided in the dataset
 
 import sys
 import os

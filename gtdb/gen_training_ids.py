@@ -1,3 +1,6 @@
+# Author: Parag Mali
+# This script splits training data into 80% training and 20% validation
+
 def gen_training_ids():
 
     dataset = [('Burstall77',24,[23,20,3,5,15]), ('BAMS_1998_123_143',21,[2,17,12,11]),

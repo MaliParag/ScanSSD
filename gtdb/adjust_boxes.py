@@ -23,9 +23,10 @@ from collections import OrderedDict
 from collections import deque
 import argparse
 
-# Default parameters for thr GTDB dataset
 def parse_args():
-
+    '''
+    Parameters
+    '''
     parser = argparse.ArgumentParser(
         description='Stitching method')
 
@@ -53,7 +54,9 @@ def parse_args():
     return parser.parse_args()
 
 def read_math(args, pdf_name):
-
+    '''
+    Read math bounding boxes for given PDF
+    '''
     math_file = os.path.join(args.math_dir, pdf_name + args.math_ext)
     data = np.array([])
 
@@ -71,7 +74,9 @@ def read_math(args, pdf_name):
     return data.astype(int)
 
 def read_char(args, pdf_name):
-
+    '''
+    Read char bounding boxes for given PDF
+    '''
     data = []
 
     path = os.path.join(args.home_char, pdf_name + ".char")
@@ -87,7 +92,9 @@ def read_char(args, pdf_name):
 
 
 def adjust(params):
-
+    '''
+    Fit the bounding boxes to the characters
+    '''
     args, math_regions, pdf_name, page_num = params
     print('Processing ', pdf_name, ' > ', page_num)
 
@@ -104,7 +111,9 @@ def adjust(params):
     return new_math
 
 def adjust_char(params):
-
+    '''
+    Adjust the character bounding boxes
+    '''
     try:
         args, char_regions, pdf_name, page_num = params
         print('Char processing ', pdf_name, ' > ', page_num)
@@ -132,6 +141,10 @@ def adjust_char(params):
         return []
 
 def adjust_boxes(args):
+    '''
+    Driving function for adjusting the boxes
+    '''
+
     pdf_list = []
     pdf_names_file = open(args.data_file, 'r')
 
