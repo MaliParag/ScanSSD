@@ -1,13 +1,13 @@
 # ScanSSD: Scanning Single Shot Detector for Math in Document Images
 
-A [PyTorch](http://pytorch.org/) implementation of ScanSSD [Scanning Single Shot MultiBox Detector](https://paragmali.me/scanning-single-shot-detector-for-math-in-document-images/) by Parag Mali. It was developed using SSD implementation by [**Max deGroot**](https://github.com/amdegroot).
-
+A [PyTorch](http://pytorch.org/) implementation of ScanSSD [Scanning Single Shot MultiBox Detector](https://paragmali.me/scanning-single-shot-detector-for-math-in-document-images/) by [**Parag Mali**](https://github.com/MaliParag/). It was developed using SSD implementation by [**Max deGroot**](https://github.com/amdegroot).
 
 <img align="right" src=
 "https://github.com/maliparag/scanssd/blob/master/images/detailed_math512_arch.png" height = 400/>
 
 ## Table of Contents
 - <a href='#installation'>Installation</a>
+- <a href='#code-organization'>Code Organization</a>
 - <a href='#training-scanssd'>Training</a>
 - <a href='#testing'>Testing</a>
 - <a href='#performance'>Performance</a>
@@ -30,6 +30,15 @@ A [PyTorch](http://pytorch.org/) implementation of ScanSSD [Scanning Single Shot
   python -m visdom.server
   ```
   * Then (during training) navigate to http://localhost:8097/ (see the Train section below for training details).
+
+## Code Organization
+ 
+SSD model is built in `ssd.py`. Training and testing the SSD is managed in `train.py` and `test.py`. All the training code is in `layers` directory. Hyper-parameters for training and testing can be specified through command line and through `config.py` file inside `data` directory. 
+
+`data` directory also contains `gtdb_new.py` data reader that uses sliding windows to generates sub-images of page for training. All the scripts regarding stitching the sub-image level detections are in `gtdb` directory. 
+
+Functions for data augmentation, visualization of bounding boxes and heatmap are in `utils`. 
+  
 
 ## Training ScanSSD
 
@@ -85,7 +94,7 @@ You can specify the parameters listed in the `eval.py` file by flagging them or 
 
 ## Performance
 
-#### ICDAR 2019 Test
+#### TFD-ICDAR 2019 Version1 Test
 
 
 | Metric | Precision | Recall | F-score |
