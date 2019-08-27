@@ -1,6 +1,6 @@
 # ScanSSD: Scanning Single Shot Detector for Math in Document Images
 
-A [PyTorch](http://pytorch.org/) implementation of ScanSSD [Scanning Single Shot MultiBox Detector](https://paragmali.me/scanning-single-shot-detector-for-math-in-document-images/) by Parag Mali. It was developed using SSD implementation by [**Max deGroot**](https://github.com/amdegroot).
+A [PyTorch](http://pytorch.org/) implementation of ScanSSD [Scanning Single Shot MultiBox Detector](https://paragmali.me/scanning-single-shot-detector-for-math-in-document-images/) by [**Parag Mali**](https://github.com/MaliParag/). It was developed using SSD implementation by [**Max deGroot**](https://github.com/amdegroot).
 
 
 <img align="right" src=
