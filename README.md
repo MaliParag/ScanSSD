@@ -49,22 +49,23 @@ Functions for data augmentation, visualization of bounding boxes and heatmap are
 - Run command
 
 ```Shell
+
 python3 train.py 
 					--dataset GTDB 
-					--dataset_root ../ 
+					--dataset_root ~/data/GTDB/ 
 					--cuda True 
 					--visdom True 
 					--batch_size 16 
 					--num_workers 4 
-					--exp_name HBOXES_iter1 
+					--exp_name IOU512_iter1 
 					--model_type 512 
 					--training_data training_data 
-					--validation_data validation_data 
 					--cfg hboxes512 
 					--loss_fun ce 
-					--kernel 3 3 
-					--padding 1 1 
-					--neg_mining True
+					--kernel 1 5 
+					--padding 0 2 
+					--neg_mining True 
+					--pos_thresh 0.75
 ```
 
 - Note:

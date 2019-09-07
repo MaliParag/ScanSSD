@@ -58,11 +58,6 @@ def train(args):
         ct += 1
 
 
-    if args.cuda:
-        ssd_net = torch.nn.DataParallel(ssd_net)
-        # ssd_net = ssd_net.to(gpu_id)
-        cudnn.benchmark = True
-
     if args.resume:
         logging.debug('Resuming training, loading {}...'.format(args.resume))
         ssd_net.load_state_dict(torch.load(args.resume))
@@ -99,7 +94,14 @@ def train(args):
     adjust_learning_rate(args, optimizer, args.gamma, step_index)
 
     #args, cfg, overlap_thresh, bkg_label, neg_pos
-    criterion = MultiBoxLoss(args, cfg, 0.5, 0, 3)
+    #criterion = MultiBoxLoss(args, cfg, 0.5, 0, 3)
+    criterion = MultiBoxLoss(args, cfg, args.pos_thresh, 0, 3)
+
+    if args.cuda:
+        ssd_net = torch.nn.DataParallel(ssd_net)
+        # ssd_net = ssd_net.to(gpu_id)
+        cudnn.benchmark = True
+
     ssd_net.train()
 
     # loss counters
@@ -360,7 +362,7 @@ def update_vis_plot(iteration, loc, viz, conf, window1, window2, update_type,
             update=True
         )
 
-def init():
+def init_args():
     '''
     Read arguments and initialize directories
     :return: args
@@ -427,6 +429,8 @@ def init():
                         help='Stride to use for sliding window')
     parser.add_argument('--window', default=1200, type=int,
                         help='Sliding window size')
+    parser.add_argument('--pos_thresh', default=0.5, type=float,
+                        help='All default boxes with iou>pos_thresh are considered as positive examples')
 
     args = parser.parse_args()
 
@@ -447,7 +451,7 @@ def init():
 
 if __name__ == '__main__':
 
-    args = init()
+    args = init_args()
     start = time.time()
 
     try:
