@@ -121,5 +121,11 @@ python3 <Workspace>/ICDAR2019/TFD-ICDAR2019v2/Evaluation/IOULib/IOUevaluater.py 
 ##### FPS
 **GTX 1080:** ~27 FPS for 512 * 512 input images
 
+## Related publications
+
+P. S. Mali, ["Scanning Single Shot Detector for Math in Document Images."](https://scholarworks.rit.edu/theses/10210/) Order No. 22622391, Rochester Institute of Technology, Ann Arbor, 2019.
+
+M. Mahdavi, R. Zanibbi, H. Mouchere, and Utpal Garain (2019). [ICDAR 2019 CROHME + TFD: Competition on Recognition of Handwritten Mathematical Expressions and Typeset Formula Detection.](https://www.cs.rit.edu/~rlaz/files/CROHME+TFD%E2%80%932019.pdf) Proc. International Conference on Document Analysis and Recognition, Sydney, Australia (to appear).
+
 ## Acknowledgements
 - [**Max deGroot**](https://github.com/amdegroot) for providing open-source SSD code
