@@ -36,9 +36,9 @@ def find_math(args):
 
                     char_map[row[-2]].add(row[1])
 
-                elif row[-4] == 'MATH_SYMBOL':
-                    if row[1] not in char_map:
-                        char_map[row[1]] = set()
+                # elif row[-4] == 'MATH_SYMBOL':
+                #    if row[1] not in char_map:
+                #        char_map[row[1]] = set()
 
         math_regions_chars = group_math(char_map)
         math_regions = create_bb(math_regions_chars, char_info)

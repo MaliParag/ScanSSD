@@ -81,6 +81,25 @@ def split(args):
                 for box in boxes:
                     writer.writerow(box)
 
+    elif ext == "csv":
+        with open(file_path, 'r') as csvfile:
+            reader = csv.reader(csvfile, delimiter=',')
+            for row in reader:
+                # if entry is not in map
+                if row[0] not in map:
+                    map[row[0]] = []
+
+                map[row[0]].append(row)
+
+        for key in map:
+
+            boxes = map[key]
+
+            with open(os.path.join(out_dir, pdf_name, str(int(float(key)) + 1)) + ".p" + ext, "w") as csvfile:
+                writer = csv.writer(csvfile, delimiter=',')
+
+                for box in boxes:
+                    writer.writerow(box)
 def test():
 
     filename = sys.argv[1] # file names to be processed

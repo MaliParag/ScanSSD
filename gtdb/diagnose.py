@@ -26,7 +26,7 @@ def read_data(training_pdf_names, char_dir, gt_math_dir, det_math_dir):
 
     for filename in training_pdf_names:
 
-        path = os.path.join(char_dir, filename + ".csv")
+        path = os.path.join(char_dir, filename + ".char")
         print('Processing ' + path)
         count = 0
 
@@ -41,7 +41,7 @@ def read_data(training_pdf_names, char_dir, gt_math_dir, det_math_dir):
                 if str(int(float(row[0]))) not in map:
                     map[str(int(float(row[0])))] = []
 
-                if row[6] == 'MATH_SYMBOL':
+                if row[5] == 'MATH_SYMBOL':
                     total_math_char = total_math_char + 1
 
                 # row[2] = data[count][1]
@@ -149,7 +149,7 @@ def character_level_score(args):
 
             if box_utils.check_inside(char_bb, math_bb): #TODO
 
-                if char_info[6] == 'MATH_SYMBOL':
+                if char_info[5] == 'MATH_SYMBOL':
                     detected_math_char_count = detected_math_char_count + 1
                     break
                 else:
@@ -157,11 +157,32 @@ def character_level_score(args):
 
     return detected_math_char_count, text_char_count
 
+def assign_chars_to_math_boxes_gt(gt_math_bbs):
+    slt_det_math_dir = '/home/psm2208/code/eval/tt_samsung_removed'
+    _, _, detailed_detections = IOUevaluater.IOUeval(test_gt_math_dir, slt_det_math_dir)
+
+    for pdf_name in gt_math_bbs:
+        for page in gt_math_bbs[pdf_name]:
+            dets = gt_math_bbs[pdf_name][page]
+            for det in dets:
+                det.append(1)
+
+    for pdf_name in gt_math_bbs:
+        current_det = detailed_detections[pdf_name]
+
+        for page in current_det[0]:
+            coarse = current_det[0][page]
+            fine = current_det[1][page]
+
+            # DET for recall
+            for det in coarse:
+                 gt_math_bbs[pdf_name][str(int(float(page)))][int(det[3:]) - 1][-1] = 2 #multi-char
+
 def box_level_granular_eval(training_pdf_names, total_math_char, gt_math_dir, det_math_dir,
                             gt_math_bbs, det_math_bbs, char_bbs, test_gt_math_dir):
 
     _, _, detailed_detections = IOUevaluater.IOUeval(test_gt_math_dir, det_math_dir)
-    assign_chars_to_math_boxes(gt_math_bbs, char_bbs)
+    assign_chars_to_math_boxes_gt(gt_math_bbs)
     assign_chars_to_math_boxes(det_math_bbs, char_bbs)
 
     single_char_det = [0, 0]
@@ -194,20 +215,20 @@ def box_level_granular_eval(training_pdf_names, total_math_char, gt_math_dir, de
                     single_char_det[1] = single_char_det[1] + 1
 
             # DET for precision
-            for det in det_math_bbs[filename][str(int(float(page)))]:
-                if det[5] > 1:
-                    total_multi_char_det = total_multi_char_det + 1
-                else:
-                    total_single_char_det = total_single_char_det + 1
+            # for det in det_math_bbs[filename][str(int(float(page)))]:
+            #     if det[5] > 1:
+            #         total_multi_char_det = total_multi_char_det + 1
+            #     else:
+            #         total_single_char_det = total_single_char_det + 1
 
-            #TODO
+            # For validation
             # for gt in gt_math_bbs[filename][str(int(float(page)))]:
             #     if gt[5] == 1:
             #         single_char_gt = single_char_gt + 1
             #     else:
             #         multi_char_gt = multi_char_gt + 1
 
-        # GT
+        # GT: For testing
         for page in gt_math_bbs[filename]:
            for gt in gt_math_bbs[filename][str(int(float(page)))]:
                 if gt[5] > 1:
@@ -215,51 +236,51 @@ def box_level_granular_eval(training_pdf_names, total_math_char, gt_math_dir, de
                 else:
                     single_char_gt = single_char_gt + 1
 
-    # single char scores - coarse
+    # single char scores
     # precision
     print("Number of single character regions correctly detected IOU50, IOU75 ", single_char_det)
-    print("Total number of single character regions detected ", total_single_char_det)
+    #print("Total number of single character regions detected ", total_single_char_det)
     print("Total number of single character regions GT ", single_char_gt)
 
     print("Number of multi character regions correctly detected IOU50, IOU75 ", multi_char_det)
-    print("Total number of multi character regions detected ", total_multi_char_det)
+    #print("Total number of multi character regions detected ", total_multi_char_det)
     print("Total number of multi character regions GT ", multi_char_gt)
 
     # Single character regions
 
     print("***** Results : Single Character Regions ***** ")
-    prec_50 = single_char_det[0]/total_single_char_det
+    #prec_50 = single_char_det[0]/total_single_char_det
     rec_50 = single_char_det[0] / single_char_gt
-    fscore_50 = 2*prec_50*rec_50/(prec_50 + rec_50)
+    #fscore_50 = 2*prec_50*rec_50/(prec_50 + rec_50)
 
-    print("Precision IOU50 ", prec_50)
+    #print("Precision IOU50 ", prec_50)
     print("Recall IOU50 ", rec_50)
-    print("F-score IOU50 ", fscore_50)
+    #print("F-score IOU50 ", fscore_50)
 
-    prec_75 = single_char_det[1] / total_single_char_det
+    #prec_75 = single_char_det[1] / total_single_char_det
     rec_75 = single_char_det[1] / single_char_gt
-    fscore_75 = 2 * prec_75 * rec_75 / (prec_75 + rec_75)
+    #fscore_75 = 2 * prec_75 * rec_75 / (prec_75 + rec_75)
 
-    print("Precision IOU75 ", prec_75)
+    #print("Precision IOU75 ", prec_75)
     print("Recall IOU75 ", rec_75)
-    print("F-score IOU75 ", fscore_75)
+    #print("F-score IOU75 ", fscore_75)
 
     print("***** Results : Multi Character Regions ***** ")
-    prec_50 = multi_char_det[0] / total_multi_char_det
+    #prec_50 = multi_char_det[0] / total_multi_char_det
     rec_50 = multi_char_det[0] / multi_char_gt
-    fscore_50 = 2 * prec_50 * rec_50 / (prec_50 + rec_50)
+    #fscore_50 = 2 * prec_50 * rec_50 / (prec_50 + rec_50)
 
-    print("Precision IOU50 ", prec_50)
+    #print("Precision IOU50 ", prec_50)
     print("Recall IOU50 ", rec_50)
-    print("F-score IOU50 ", fscore_50)
+    #print("F-score IOU50 ", fscore_50)
 
-    prec_75 = multi_char_det[1] / total_multi_char_det
+    #prec_75 = multi_char_det[1] / total_multi_char_det
     rec_75 = multi_char_det[1] / multi_char_gt
-    fscore_75 = 2 * prec_75 * rec_75 / (prec_75 + rec_75)
+    #fscore_75 = 2 * prec_75 * rec_75 / (prec_75 + rec_75)
 
-    print("Precision IOU75 ", prec_75)
+    #print("Precision IOU75 ", prec_75)
     print("Recall IOU75 ", rec_75)
-    print("F-score IOU75 ", fscore_75)
+    #print("F-score IOU75 ", fscore_75)
 
 def find_merged_regions(training_pdf_names, gt_math_boxes, det_math_boxes):
 
@@ -306,17 +327,20 @@ def assign_chars_to_math_boxes(all_math_boxes, all_char_bbs):
             for math_box in math_boxes:
                 math_box.append(0)
 
-            for char_info in char_bbs:
-                for math_bb in math_boxes:
+            for math_bb in math_boxes:
+                current_math_bb = [float(math_bb[1]), float(math_bb[2]),
+                                   float(math_bb[3]), float(math_bb[4])]
+
+                for char_info in char_bbs:
 
                     current_char_bb = [float(char_info[1]), float(char_info[2]), #TODO index from 1
                                        float(char_info[3]), float(char_info[4])]
 
-                    current_math_bb = [float(math_bb[1]),float(math_bb[2]),
-                                       float(math_bb[3]),float(math_bb[4])]
-
-                    if box_utils.check_inside(current_char_bb, current_math_bb):
+                    if box_utils.intersects(current_char_bb, current_math_bb):
                         math_bb[-1] = math_bb[-1] + 1
+
+                        if math_bb[-1] > 1:
+                            break
 
 
 if __name__ == '__main__':
@@ -344,7 +368,7 @@ if __name__ == '__main__':
         read_data(training_pdf_names_list, gt_char_dir, gt_math_dir, detected_math_dir)
 
     char_level_eval(training_pdf_names, total_math_char, copy.deepcopy(gt_math_bbs),
-                    copy.deepcopy(det_math_bbs), copy.deepcopy(char_bbs))
+                     copy.deepcopy(det_math_bbs), copy.deepcopy(char_bbs))
 
     box_level_granular_eval(training_pdf_names, total_math_char, gt_math_dir,
                             detected_math_dir, gt_math_bbs,

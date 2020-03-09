@@ -168,4 +168,3 @@ if __name__ == "__main__":
 
     #filename, gt_math_dir, det_math_dir, output_dir
     create_gt_segmentation(home_data + type, gt_math, det_math, output_dir)
-

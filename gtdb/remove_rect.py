@@ -88,8 +88,8 @@ if __name__ == "__main__":
     home_images = "/home/psm2208/data/GTDB/images/"
     home_anno = "/home/psm2208/data/GTDB/annotations/"
 
-    math_dir = "/home/psm2208/code/eval/tt_samsung" #"/home/psm2208/data/GTDB/relations_train_adjust_csv"
-    output_dir = "/home/psm2208/code/eval/tt_samsung_removed" #"/home/psm2208/data/GTDB/relations_train_adjust_csv_removed"
+    math_dir = "/home/psm2208/code/eval/tt_samsung_train" #"/home/psm2208/data/GTDB/relations_train_adjust_csv"
+    output_dir = "/home/psm2208/code/eval/tt_samsung_train_removed" #"/home/psm2208/data/GTDB/relations_train_adjust_csv_removed"
 
     type = sys.argv[1]
 
