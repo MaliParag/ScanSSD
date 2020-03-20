@@ -108,8 +108,9 @@ You can specify the parameters listed in the `eval.py` file by flagging them or 
 
 ## Stitching the patch level results
 
-```python3 <Workspace>/ssd/gtdb/stitch_patches_pdf.py 
+```
 
+python3 <Workspace>/ssd/gtdb/stitch_patches_pdf.py 
 --data_file <Workspace>/train_pdf 
 --output_dir <Workspace>/ssd/eval/stitched_HBOXES512_e4/ 
 --math_dir <Workspace>/ssd/eval/test_HBOXES512_e4/ 
@@ -126,7 +127,8 @@ output_dir is where you want to generate the final output
 
 ## Evaluate 
 
-```python3 <Workspace>/ICDAR2019/TFD-ICDAR2019v2/Evaluation/IOULib/IOUevaluater.py 
+```
+python3 <Workspace>/ICDAR2019/TFD-ICDAR2019v2/Evaluation/IOULib/IOUevaluater.py 
 --ground_truth <Workspace>/ICDAR2019/TFD-ICDAR2019v2/Train/math_gt/ 
 --detections <Workspace>/ssd/eval/stitched_HBOXES512_e4/
 ```
