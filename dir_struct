@@ -1,0 +1,1551 @@
+.
+├── all_training_data
+├── annotations
+│   ├── ActaM_1970_37_63
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 19.pmath
+│   │   ├── 1.pmath
+│   │   ├── 20.pmath
+│   │   ├── 21.pmath
+│   │   ├── 22.pmath
+│   │   ├── 23.pmath
+│   │   ├── 24.pmath
+│   │   ├── 25.pmath
+│   │   ├── 26.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── ActaM_1970_37_63.math
+│   ├── ActaM_1998_283_305
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 19.pmath
+│   │   ├── 1.pmath
+│   │   ├── 20.pmath
+│   │   ├── 21.pmath
+│   │   ├── 22.pmath
+│   │   ├── 23.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── ActaM_1998_283_305.math
+│   ├── AIF_1970_493_498
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   └── 6.pmath
+│   ├── AIF_1970_493_498.math
+│   ├── AIF_1999_375_404
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 19.pmath
+│   │   ├── 1.pmath
+│   │   ├── 20.pmath
+│   │   ├── 21.pmath
+│   │   ├── 22.pmath
+│   │   ├── 23.pmath
+│   │   ├── 24.pmath
+│   │   ├── 25.pmath
+│   │   ├── 26.pmath
+│   │   ├── 27.pmath
+│   │   ├── 28.pmath
+│   │   ├── 29.pmath
+│   │   ├── 2.pmath
+│   │   ├── 30.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── AIF_1999_375_404.math
+│   ├── Alford94
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 19.pmath
+│   │   ├── 1.pmath
+│   │   ├── 20.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── Alford94.math
+│   ├── AnnM_1970_550_569
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 19.pmath
+│   │   ├── 1.pmath
+│   │   ├── 20.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── AnnM_1970_550_569.math
+│   ├── Arkiv_1971_141_163
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 19.pmath
+│   │   ├── 1.pmath
+│   │   ├── 20.pmath
+│   │   ├── 21.pmath
+│   │   ├── 22.pmath
+│   │   ├── 23.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── Arkiv_1971_141_163.math
+│   ├── Arkiv_1997_185_199
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── Arkiv_1997_185_199.math
+│   ├── ASENS_1970_273_284
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── ASENS_1970_273_284.math
+│   ├── ASENS_1997_367_384
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── ASENS_1997_367_384.math
+│   ├── BAMS_1971_1974_1
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   └── 3.pmath
+│   ├── BAMS_1971_1974_1.math
+│   ├── BAMS_1971_1974_2
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   └── 4.pmath
+│   ├── BAMS_1971_1974_2.math
+│   ├── BAMS_1971_1974_3
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   └── 4.pmath
+│   ├── BAMS_1971_1974_3.math
+│   ├── BAMS_1998_123_143
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 19.pmath
+│   │   ├── 1.pmath
+│   │   ├── 20.pmath
+│   │   ├── 21.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── BAMS_1998_123_143.math
+│   ├── Bergweiler83
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 19.pmath
+│   │   ├── 20.pmath
+│   │   ├── 21.pmath
+│   │   ├── 22.pmath
+│   │   ├── 23.pmath
+│   │   ├── 24.pmath
+│   │   ├── 25.pmath
+│   │   ├── 26.pmath
+│   │   ├── 27.pmath
+│   │   ├── 28.pmath
+│   │   ├── 29.pmath
+│   │   ├── 30.pmath
+│   │   ├── 31.pmath
+│   │   ├── 32.pmath
+│   │   ├── 34.pmath
+│   │   ├── 35.pmath
+│   │   ├── 36.pmath
+│   │   ├── 37.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── Bergweiler83.math
+│   ├── Borcherds86
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   └── 4.pmath
+│   ├── Borcherds86.math
+│   ├── Brezis83
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   └── 5.pmath
+│   ├── Brezis83.math
+│   ├── BSMF_1970_165_192
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 19.pmath
+│   │   ├── 1.pmath
+│   │   ├── 20.pmath
+│   │   ├── 21.pmath
+│   │   ├── 22.pmath
+│   │   ├── 23.pmath
+│   │   ├── 24.pmath
+│   │   ├── 25.pmath
+│   │   ├── 26.pmath
+│   │   ├── 27.pmath
+│   │   ├── 28.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── BSMF_1970_165_192.math
+│   ├── BSMF_1998_245_271
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 19.pmath
+│   │   ├── 1.pmath
+│   │   ├── 20.pmath
+│   │   ├── 21.pmath
+│   │   ├── 22.pmath
+│   │   ├── 23.pmath
+│   │   ├── 24.pmath
+│   │   ├── 25.pmath
+│   │   ├── 26.pmath
+│   │   ├── 27.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── BSMF_1998_245_271.math
+│   ├── Burstall77
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 19.pmath
+│   │   ├── 20.pmath
+│   │   ├── 21.pmath
+│   │   ├── 22.pmath
+│   │   ├── 23.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── Burstall77.math
+│   ├── Cline88
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── Cline88.math
+│   ├── Emden76.math
+│   ├── Erbe94.math
+│   ├── Gidas79.math
+│   ├── InvM_1970_121_134
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── InvM_1970_121_134.math
+│   ├── InvM_1999_163_181
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 19.pmath
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── InvM_1999_163_181.math
+│   ├── JMKU_1971_181_194
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── JMKU_1971_181_194.math
+│   ├── JMKU_1971_373_375
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   └── 3.pmath
+│   ├── JMKU_1971_373_375.math
+│   ├── JMKU_1971_377_379
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   └── 3.pmath
+│   ├── JMKU_1971_377_379.math
+│   ├── JMS_1975_281_288
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   └── 8.pmath
+│   ├── JMS_1975_281_288.math
+│   ├── JMS_1975_289_293
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   └── 5.pmath
+│   ├── JMS_1975_289_293.math
+│   ├── JMS_1975_497_506
+│   │   ├── 10.pmath
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── JMS_1975_497_506.math
+│   ├── jones83.math
+│   ├── Katz99.math
+│   ├── Kazhdan79.math
+│   ├── KJM_1999_17_36
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 19.pmath
+│   │   ├── 1.pmath
+│   │   ├── 20.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── KJM_1999_17_36.math
+│   ├── Kontsevich94.math
+│   ├── Li75.math
+│   ├── Lorentz48.math
+│   ├── Lusztig89.math
+│   ├── MA_1970_26_38
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── MA_1970_26_38.math
+│   ├── MA_1977_275_292
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── MA_1977_275_292.math
+│   ├── MA_1999_175_196
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 19.pmath
+│   │   ├── 1.pmath
+│   │   ├── 20.pmath
+│   │   ├── 21.pmath
+│   │   ├── 22.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── MA_1999_175_196.math
+│   ├── TMJ_1973_317_331
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   ├── TMJ_1973_317_331.math
+│   ├── TMJ_1973_333_338
+│   │   ├── 1.pmath
+│   │   ├── 2.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   └── 6.pmath
+│   ├── TMJ_1973_333_338.math
+│   ├── TMJ_1990_163_193
+│   │   ├── 10.pmath
+│   │   ├── 11.pmath
+│   │   ├── 12.pmath
+│   │   ├── 13.pmath
+│   │   ├── 14.pmath
+│   │   ├── 15.pmath
+│   │   ├── 16.pmath
+│   │   ├── 17.pmath
+│   │   ├── 18.pmath
+│   │   ├── 19.pmath
+│   │   ├── 1.pmath
+│   │   ├── 20.pmath
+│   │   ├── 21.pmath
+│   │   ├── 22.pmath
+│   │   ├── 23.pmath
+│   │   ├── 24.pmath
+│   │   ├── 25.pmath
+│   │   ├── 26.pmath
+│   │   ├── 27.pmath
+│   │   ├── 28.pmath
+│   │   ├── 29.pmath
+│   │   ├── 2.pmath
+│   │   ├── 30.pmath
+│   │   ├── 31.pmath
+│   │   ├── 3.pmath
+│   │   ├── 4.pmath
+│   │   ├── 5.pmath
+│   │   ├── 6.pmath
+│   │   ├── 7.pmath
+│   │   ├── 8.pmath
+│   │   └── 9.pmath
+│   └── TMJ_1990_163_193.math
+├── images
+│   ├── ActaM_1970_37_63
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 22.png
+│   │   ├── 23.png
+│   │   ├── 24.png
+│   │   ├── 25.png
+│   │   ├── 26.png
+│   │   ├── 27.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── ActaM_1998_283_305
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 22.png
+│   │   ├── 23.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── AIF_1970_493_498
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   └── 6.png
+│   ├── AIF_1999_375_404
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 22.png
+│   │   ├── 23.png
+│   │   ├── 24.png
+│   │   ├── 25.png
+│   │   ├── 26.png
+│   │   ├── 27.png
+│   │   ├── 28.png
+│   │   ├── 29.png
+│   │   ├── 2.png
+│   │   ├── 30.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── Alford94
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── AnnM_1970_550_569
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── Arkiv_1971_141_163
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 22.png
+│   │   ├── 23.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── Arkiv_1997_185_199
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── ASENS_1970_273_284
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── ASENS_1997_367_384
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── BAMS_1971_1974_1
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   └── 3.png
+│   ├── BAMS_1971_1974_2
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   └── 4.png
+│   ├── BAMS_1971_1974_3
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   └── 4.png
+│   ├── BAMS_1998_123_143
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── Bergweiler83
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 22.png
+│   │   ├── 23.png
+│   │   ├── 24.png
+│   │   ├── 25.png
+│   │   ├── 26.png
+│   │   ├── 27.png
+│   │   ├── 28.png
+│   │   ├── 29.png
+│   │   ├── 2.png
+│   │   ├── 30.png
+│   │   ├── 31.png
+│   │   ├── 32.png
+│   │   ├── 33.png
+│   │   ├── 34.png
+│   │   ├── 35.png
+│   │   ├── 36.png
+│   │   ├── 37.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── Borcherds86
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   └── 4.png
+│   ├── Brezis83
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   └── 5.png
+│   ├── BSMF_1970_165_192
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 22.png
+│   │   ├── 23.png
+│   │   ├── 24.png
+│   │   ├── 25.png
+│   │   ├── 26.png
+│   │   ├── 27.png
+│   │   ├── 28.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── BSMF_1998_245_271
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 22.png
+│   │   ├── 23.png
+│   │   ├── 24.png
+│   │   ├── 25.png
+│   │   ├── 26.png
+│   │   ├── 27.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── Burstall77
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 22.png
+│   │   ├── 23.png
+│   │   ├── 24.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── Cline88
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── Emden76
+│   │   ├── 10.png
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── Erbe94
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   └── 6.png
+│   ├── Gidas79
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 22.png
+│   │   ├── 23.png
+│   │   ├── 24.png
+│   │   ├── 25.png
+│   │   ├── 26.png
+│   │   ├── 27.png
+│   │   ├── 28.png
+│   │   ├── 29.png
+│   │   ├── 2.png
+│   │   ├── 30.png
+│   │   ├── 31.png
+│   │   ├── 32.png
+│   │   ├── 33.png
+│   │   ├── 34.png
+│   │   ├── 35.png
+│   │   ├── 36.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── InvM_1970_121_134
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── InvM_1999_163_181
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── JMKU_1971_181_194
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── JMKU_1971_373_375
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   └── 3.png
+│   ├── JMKU_1971_377_379
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   └── 3.png
+│   ├── JMS_1975_281_288
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   └── 8.png
+│   ├── JMS_1975_289_293
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   └── 5.png
+│   ├── JMS_1975_497_506
+│   │   ├── 10.png
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── jones83
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 22.png
+│   │   ├── 23.png
+│   │   ├── 24.png
+│   │   ├── 25.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── Katz99
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 22.png
+│   │   ├── 23.png
+│   │   ├── 24.png
+│   │   ├── 25.png
+│   │   ├── 26.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── Kazhdan79
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── KJM_1999_17_36
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── Kontsevich94
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 22.png
+│   │   ├── 23.png
+│   │   ├── 24.png
+│   │   ├── 25.png
+│   │   ├── 26.png
+│   │   ├── 27.png
+│   │   ├── 28.png
+│   │   ├── 29.png
+│   │   ├── 2.png
+│   │   ├── 30.png
+│   │   ├── 31.png
+│   │   ├── 32.png
+│   │   ├── 33.png
+│   │   ├── 34.png
+│   │   ├── 35.png
+│   │   ├── 36.png
+│   │   ├── 37.png
+│   │   ├── 38.png
+│   │   ├── 39.png
+│   │   ├── 3.png
+│   │   ├── 40.png
+│   │   ├── 41.png
+│   │   ├── 42.png
+│   │   ├── 43.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── Li75
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── Lorentz48
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 22.png
+│   │   ├── 23.png
+│   │   ├── 24.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── Lusztig89
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 22.png
+│   │   ├── 23.png
+│   │   ├── 24.png
+│   │   ├── 25.png
+│   │   ├── 26.png
+│   │   ├── 27.png
+│   │   ├── 28.png
+│   │   ├── 29.png
+│   │   ├── 2.png
+│   │   ├── 30.png
+│   │   ├── 31.png
+│   │   ├── 32.png
+│   │   ├── 33.png
+│   │   ├── 34.png
+│   │   ├── 35.png
+│   │   ├── 36.png
+│   │   ├── 37.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── MA_1970_26_38
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── MA_1977_275_292
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── MA_1999_175_196
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 17.png
+│   │   ├── 18.png
+│   │   ├── 19.png
+│   │   ├── 1.png
+│   │   ├── 20.png
+│   │   ├── 21.png
+│   │   ├── 22.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── TMJ_1973_317_331
+│   │   ├── 10.png
+│   │   ├── 11.png
+│   │   ├── 12.png
+│   │   ├── 13.png
+│   │   ├── 14.png
+│   │   ├── 15.png
+│   │   ├── 16.png
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   ├── 6.png
+│   │   ├── 7.png
+│   │   ├── 8.png
+│   │   └── 9.png
+│   ├── TMJ_1973_333_338
+│   │   ├── 1.png
+│   │   ├── 2.png
+│   │   ├── 3.png
+│   │   ├── 4.png
+│   │   ├── 5.png
+│   │   └── 6.png
+│   └── TMJ_1990_163_193
+│       ├── 10.png
+│       ├── 11.png
+│       ├── 12.png
+│       ├── 13.png
+│       ├── 14.png
+│       ├── 15.png
+│       ├── 16.png
+│       ├── 17.png
+│       ├── 18.png
+│       ├── 19.png
+│       ├── 1.png
+│       ├── 20.png
+│       ├── 21.png
+│       ├── 22.png
+│       ├── 23.png
+│       ├── 24.png
+│       ├── 25.png
+│       ├── 26.png
+│       ├── 27.png
+│       ├── 28.png
+│       ├── 29.png
+│       ├── 2.png
+│       ├── 30.png
+│       ├── 31.png
+│       ├── 32.png
+│       ├── 3.png
+│       ├── 4.png
+│       ├── 5.png
+│       ├── 6.png
+│       ├── 7.png
+│       ├── 8.png
+│       └── 9.png
+├── ssd
+│   ├── base_weights
+│   │   └── vgg16_reducedfc.pth
+│   ├── data
+│   │   ├── config.py
+│   │   ├── gtdb_new.py
+│   │   ├── __init__.py
+│   │   └── __pycache__
+│   ├── eval
+│   ├── gtdb
+│   │   ├── adjust_boxes.py
+│   │   ├── box_utils.py
+│   │   ├── calculate_means.py
+│   │   ├── create_dataset.py
+│   │   ├── create_gt_math.py
+│   │   ├── create_segmentation_gt.py
+│   │   ├── diagnose.py
+│   │   ├── feature_extractor.py
+│   │   ├── fit_box.py
+│   │   ├── generate_subimages.py
+│   │   ├── gen_training_ids.py
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   ├── remove_rect.py
+│   │   ├── resize_gt.py
+│   │   ├── scale_boxes.py
+│   │   ├── split_annotations_per_page.py
+│   │   ├── stitch_patches_page.py
+│   │   └── stitch_patches_pdf.py
+│   ├── images
+│   │   └── detailed_math512_arch.png
+│   ├── layers
+│   │   ├── box_utils.py
+│   │   ├── functions
+│   │   ├── __init__.py
+│   │   ├── modules
+│   │   └── __pycache__
+│   ├── LICENSE
+│   ├── logs
+│   ├── README.md
+│   ├── ssd.py
+│   ├── test.py
+│   ├── train.py
+│   ├── utils
+│       ├── augmentations.py
+│       ├── helpers.py
+│       ├── __init__.py
+│       ├── __pycache__
+│       └── visualize.py
+├── testing_data
+├── test_pdf
+├── training_data
+├── train_pdf
+├── validation_data
