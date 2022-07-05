@@ -35,7 +35,8 @@ class SSD(nn.Module):
         #self.priors = Variable(self.priorbox.forward(), volatile=True)
         with torch.no_grad():
             self.priors = self.priorbox.forward()
-            self.priors.to(gpu_id)
+            if args.cuda:
+                self.priors.to(gpu_id)
 
         self.size = size
 
@@ -105,7 +106,7 @@ class SSD(nn.Module):
         conf = torch.cat([o.view(o.size(0), -1) for o in conf], 1)
 
         if self.phase == "test":
-            output, boxes, scores = self.detect(
+            output, boxes, scores = self.detect.apply(          #para nova forma de tratamento forward com autograd.Function
                 loc.view(loc.size(0), -1, 4),                   # loc preds
                 self.softmax(conf.view(conf.size(0), -1,
                              self.num_classes)),                # conf preds

@@ -46,8 +46,8 @@ def test_net_batch(args, net, gpu_id, dataset, transform, thresh):
             images = images.cuda()
             targets = [ann.cuda() for ann in targets]
         else:
-            images = Variable(images)
-            targets = [Variable(ann, volatile=True) for ann in targets]
+            images = Variable(images,requires_grad=False)
+            targets = [Variable(ann, requires_grad=False) for ann in targets]
 
         y, debug_boxes, debug_scores = net(images)  # forward pass
         detections = y.data
@@ -98,6 +98,9 @@ def test_gtdb(args):
     if args.cuda:
         gpu_id = helpers.get_freer_gpu()
         torch.cuda.set_device(gpu_id)
+        map_location = {'cuda:1':'cuda:0'}
+    else:
+        map_location=torch.device('cpu')
 
     # load net
     num_classes = 2 # +1 background
@@ -106,9 +109,10 @@ def test_gtdb(args):
     net = build_ssd(args, 'test', exp_cfg[args.cfg], gpu_id, args.model_type, num_classes)
 
     logging.debug(net)
-    net.to(gpu_id)
+    if args.cuda:
+        net.to(gpu_id)
     net = nn.DataParallel(net)
-    net.load_state_dict(torch.load(args.trained_model, map_location={'cuda:1':'cuda:0'}))
+    net.load_state_dict(torch.load(args.trained_model, map_location=map_location))
     net.eval()
     logging.debug('Finished loading model!')
 
