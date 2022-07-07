@@ -46,8 +46,9 @@ def parse_args():
     parser.add_argument('--stitching_algo', default='equal', type=str, help='Stitching algo to use')
     parser.add_argument('--algo_threshold', default=30, type=int, help='Stitching algo threshold')
     parser.add_argument('--num_workers', default=4, type=int, help='Number of workers')
-    parser.add_argument('--preprocess', default=False, type=bool, help='Whether to fit math regions before pooling')
-    parser.add_argument('--postprocess', default=False, type=bool, help='Whether to fit math regions after pooling')
+    parser.add_argument('--preprocess', default=False, action='store_true', help='Whether to fit math regions before pooling')
+    parser.add_argument('--postprocess', default=False, action='store_true', help='Whether to fit math regions after pooling')
+    parser.add_argument('--gen_math', default= False, action='store_true', help='Whether to generate .math files')
 
     return parser.parse_args()
 
@@ -264,21 +265,26 @@ def stitch(args):
 
             math_file_path = os.path.join(args.output_dir, pdf_name + '.csv')
 
-            #salvando também arquivo no formato .math para viabilizar a anotação das imagens
-            pmath_file_path = os.path.join(args.output_dir, pdf_name + '.math')
+            
 
             if not os.path.exists(os.path.dirname(math_file_path)):
                 os.makedirs(os.path.dirname(math_file_path))
 
             math_file = open(math_file_path, 'a')
-            pmath_file = open(pmath_file_path, 'a')
+           
 
             np.savetxt(math_file, final_math, fmt='%.2f', delimiter=',')
 
-            np.savetxt(pmath_file,final_math,fmt=['%i','%.2f','%.2f','%.2f','%.2f'],delimiter=',')
-
             math_file.close()
-            pmath_file.close()
+
+            #salvando também arquivo no formato .math para viabilizar a anotação das imagens
+            if args.gen_math:
+                pmath_file_path = os.path.join(args.output_dir, pdf_name + '.math')
+                pmath_file = open(pmath_file_path, 'a')
+                np.savetxt(pmath_file,final_math,fmt=['%i','%.2f','%.2f','%.2f','%.2f'],delimiter=',')
+                pmath_file.close()
+
+
         except Exception as e:
             print("Exception while processing ", pdf_name, " ", page_num, " ", sys.exc_info(), e)
 
