@@ -12,8 +12,10 @@ import numpy as np
 from multiprocessing import Pool
 from cv2.dnn import NMSBoxes
 from scipy.ndimage.measurements import label
-from gtdb import fit_box
-from gtdb import feature_extractor
+#from gtdb import fit_box
+import fit_box
+#from gtdb import feature_extractor
+import feature_extractor
 import argparse
 import shutil
 
@@ -44,8 +46,8 @@ def parse_args():
     parser.add_argument('--stitching_algo', default='equal', type=str, help='Stitching algo to use')
     parser.add_argument('--algo_threshold', default=30, type=int, help='Stitching algo threshold')
     parser.add_argument('--num_workers', default=4, type=int, help='Number of workers')
-    parser.add_argument('--preprocess', type=bool, help='Whether to fit math regions before pooling')
-    parser.add_argument('--postprocess', type=bool, help='Whether to fit math regions after pooling')
+    parser.add_argument('--preprocess', default=False, type=bool, help='Whether to fit math regions before pooling')
+    parser.add_argument('--postprocess', default=False, type=bool, help='Whether to fit math regions after pooling')
 
     return parser.parse_args()
 
@@ -84,11 +86,10 @@ def vote_for_regions(args, math_regions, image):
     # change all the values less than thresh_votes to 0
     votes[votes < thresh_votes] = 0
     votes[votes >= thresh_votes] = 1
-
+        
     return votes
 
 def voting_sum_score(votes, math_regions):
-
     # cast votes for the regions
     for box in math_regions:
         votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
@@ -98,19 +99,18 @@ def voting_sum_score(votes, math_regions):
 
 def voting_max_score(votes, math_regions):
 
-    # sort based on the confs. Confs is column 4
+    # sort based on the confs. Confs is column 4  
     data = math_regions[math_regions[:, 4].argsort()]
-
+    
     for box in data:
         votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = box[4]
-
     return votes
 
 def voting_equal(votes, math_regions):
     # cast votes for the regions
     for box in math_regions:
         votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = \
-            votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + 1
+            votes[int(box[1]):int(box[3]), int(box[0]):int(box[2])] + 1          
 
     return votes
 
@@ -143,7 +143,7 @@ def perform_nms(math_regions):
     # convert from x1,y1,x2,y2 to x,y,w,h
     math_regions[:, 2] = math_regions[:, 2] - math_regions[:, 0]
     math_regions[:, 3] = math_regions[:, 3] - math_regions[:, 1]
-
+    
     scores = math_regions[:, 4]
     math_regions = np.delete(math_regions, 4, 1)
 
@@ -252,7 +252,6 @@ def stitch(args):
     out = pool.map(voting_algo, voting_ip_list)
 
     for ip, final_math in zip(voting_ip_list, out):
-
         try:
             pdf_name = ip[2]
             page_num = ip[3]
@@ -265,13 +264,21 @@ def stitch(args):
 
             math_file_path = os.path.join(args.output_dir, pdf_name + '.csv')
 
+            #salvando também arquivo no formato .math para viabilizar a anotação das imagens
+            pmath_file_path = os.path.join(args.output_dir, pdf_name + '.math')
+
             if not os.path.exists(os.path.dirname(math_file_path)):
                 os.makedirs(os.path.dirname(math_file_path))
 
             math_file = open(math_file_path, 'a')
+            pmath_file = open(pmath_file_path, 'a')
 
             np.savetxt(math_file, final_math, fmt='%.2f', delimiter=',')
+
+            np.savetxt(pmath_file,final_math,fmt=['%i','%.2f','%.2f','%.2f','%.2f'],delimiter=',')
+
             math_file.close()
+            pmath_file.close()
         except Exception as e:
             print("Exception while processing ", pdf_name, " ", page_num, " ", sys.exc_info(), e)
 
