@@ -123,10 +123,10 @@ def train(args):
         vis_legend = ['Location Loss', 'Confidence Loss', 'Total Loss']
         iter_plot = create_vis_plot('Iteration', 'Loss', viz, 'Training ' + vis_title, vis_legend)
         epoch_plot = create_vis_plot('Epoch', 'Loss', viz, 'Training ' + vis_title, vis_legend)
-
+#alterando Shuffle para False
     data_loader = data.DataLoader(dataset, args.batch_size,
                                   num_workers=args.num_workers,
-                                  shuffle=True, collate_fn=detection_collate,
+                                  shuffle=False, collate_fn=detection_collate,
                                   pin_memory=True)
 
     logging.debug('Training set size is ' + str(len(dataset)))
@@ -200,8 +200,8 @@ def train(args):
 
 
             train_loss = loc_loss + conf_loss
-            update_vis_plot(epoch, loc_loss, viz, conf_loss, epoch_plot, None,
-                            'append', epoch_size)
+            if args.visdom:
+                update_vis_plot(epoch, loc_loss, viz, conf_loss, epoch_plot, None,'append', epoch_size)
 
             if args.validation_data != '':
                 # Validate data
