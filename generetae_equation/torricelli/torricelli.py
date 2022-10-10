@@ -26,8 +26,8 @@ length_initial_velocity_list = len(initial_velocity_list)
 acceleration_list = ['a','g']
 length_acceleration_list = len(acceleration_list)
 
-distance_list = ['s','S','d','D']
-length_distance_list = len(acceleration_list)
+distance_list = ['s','S','d','D','x','X']
+length_distance_list = len(distance_list)
 
 #lista de fontes para aumentar a variabilidade das equações
 fontlist = ['','lxfonts','arev','anttor','gfsartemisia','fourier']

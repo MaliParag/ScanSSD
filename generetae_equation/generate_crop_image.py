@@ -14,9 +14,9 @@ para cada fórmula, portanto, a partir desse ponto a execução é igual para to
 """
 
 
-latex_path = 'torricelli/data/' #define o local onde os .tex foram salvos
-pdf_path = 'torricelli/data/' #onde vai salvar o PDF, intermediário no processo de criação da imagem
-image_path = 'torricelli/data/' #onde vai salvar o .PNG gerado para a página do PDF, também intermediário à criação da imagem final
+latex_path = 'acc_centripetal/data/' #define o local onde os .tex foram salvos
+pdf_path = 'acc_centripetal/data/' #onde vai salvar o PDF, intermediário no processo de criação da imagem
+image_path = 'acc_centripetal/data/' #onde vai salvar o .PNG gerado para a página do PDF, também intermediário à criação da imagem final
 crop_image_path = 'crop_image/' #onde salva a imagem já cortada no tamanho que considera apenas a fórmula e não a página toda
 
 #parâmetros para o crop da imagem
