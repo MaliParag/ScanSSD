@@ -108,7 +108,8 @@ def test_gtdb(trained_model='weights/AMATH512_e1GTDB.pth',visual_threshold=0.6,c
                  batch_size, num_workers, kernel, padding,neg_mining ,stride, window,root_folder,stitching_algo,
                  algo_threshold,preprocess,postprocess,gen_math)
     
-    create_images_from_pdfs(args.root_folder,args.exp_name)
+    print("Criando imagens a partir do PDF...")
+#    create_images_from_pdfs(args.root_folder,args.exp_name)
     
 
 
@@ -167,9 +168,11 @@ def test_gtdb(trained_model='weights/AMATH512_e1GTDB.pth',visual_threshold=0.6,c
                     thresh=args.visual_threshold)
         
         #stitch
+        print('Iniciando Stitch...')
         stitch(args)
 
         # Visualize
+        print('Fazendo Anotações')
         visualize(img_dir =args.img_dir, out_dir=args.output_dir_annot,
                    math_dir=args.math_dir_annot)
 

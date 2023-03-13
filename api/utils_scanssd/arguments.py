@@ -5,14 +5,14 @@ class Arguments:
                  use_char_info=False,limit = -1, cfg = "hboxes512",batch_size = 16, num_workers = 4, kernel = [1,5], padding = [3,3],neg_mining = True,
                  stride = 0.1, window = 1200,root_folder = "..\..\files",stitching_algo='equal',algo_threshold=30,preprocess=False,postprocess=False,gen_math=False):
         
-        self.trainded_model = trained_model   #Modelo pré-treinado
+        self.trained_model = trained_model   #Modelo pré-treinado
         self.exp_name = exp_name # Nome do Experimento, usado para salvar os resultados
         self.root_folder = root_folder #pasta root onde estão armazenados os arquivos PDF, Imagem, resultados, etc
         self.save_folder = os.path.join(root_folder,self.exp_name,'results')       #Diretório para salvar os resultados
         self.visual_threshold = visual_threshold #Final confidence Threshold
         self.cuda = cuda #Usa ou não GPU
-        self.dataset_root = os.path.join(self.exp_name,'images') #Local onde as imagens das páginas do PDF estão armazenadas
-        self.test_data = os.path.join(root_folder,self.exp_name,'data') #arquivo que relaciona linha a linha as imagens do PDF a serem processadas pelo ScanSSD
+        self.dataset_root = os.path.join(self.root_folder,self.exp_name) #Local onde as imagens das páginas do PDF estão armazenadas
+        self.test_data = os.path.join('data') #arquivo que relaciona linha a linha as imagens do PDF a serem processadas pelo ScanSSD
         self.verbose = verbose 
         self.model_type = model_type # Tipo do Modelo do ScanSSD SSD300 ou SSD512
         self.use_char_info = use_char_info # Se usa ou não a informação de caracter
@@ -34,7 +34,7 @@ class Arguments:
         self.math_ext = '.csv'
         self.home_data = self.dataset_root #definir melhor essa variável
         self.home_eval = self.save_folder
-        self.home_images = self.dataset_root
+        self.home_images = os.path.join(self.root_folder,self.dataset_root,'images')
         self.home_anno = os.path.join(root_folder,self.exp_name,'annotations')
         self.home_char = os.path.join(root_folder,self.exp_name,'annotations_char')
         self.stitching_algo = stitching_algo
@@ -44,8 +44,8 @@ class Arguments:
         self.gen_math = gen_math
 
         #Argumentos para visualize
-        self.img_dir = self.dataset_root
-        self.output_dir_annot = os.path.join(self.root_folder,'annotated')
+        self.img_dir = os.path.join(self.dataset_root,'images')
+        self.output_dir_annot = os.path.join(self.root_folder,self.exp_name,'annotated')
         self.math_dir_annot = self.output_dir
         self.char_dir = None
 

@@ -140,12 +140,6 @@ def annotate_each_file(img_dir, math_file, char_file, out_dir):
 
 def visualize(img_dir,out_dir,math_dir,char_dir=None):
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--img_dir", type=str, required=True, help="Directory of pdf images")
-    parser.add_argument("--out_dir", type=str, required=True, help="Destination to store annotated outputs")
-    parser.add_argument("--math_dir", type=str, required=False, help="Directory of math annotations")
-    parser.add_argument("--char_dir", type=str, required=False, help="Directory of char annotations")
-    args = parser.parse_args()
 
     '''
         store image directory paths
