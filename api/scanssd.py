@@ -18,6 +18,7 @@ import torch.nn as nn
 from api.utils_scanssd.arguments import Arguments
 from api.utils_scanssd.convert_pdf_to_image import create_images_from_pdfs
 from gtdb.stitch_pages import stitch
+from api.utils_scanssd.visualize_annotations import visualize
 
 
 def test_net_batch(args, net, gpu_id, dataset, transform, thresh):
@@ -108,7 +109,7 @@ def test_gtdb(trained_model='weights/AMATH512_e1GTDB.pth',visual_threshold=0.6,c
                  algo_threshold,preprocess,postprocess,gen_math)
     
     create_images_from_pdfs(args.root_folder,args.exp_name)
-    sys.exit()
+    
 
 
     if args.cuda and torch.cuda.is_available():
@@ -167,6 +168,11 @@ def test_gtdb(trained_model='weights/AMATH512_e1GTDB.pth',visual_threshold=0.6,c
         
         #stitch
         stitch(args)
+
+        # Visualize
+        visualize(img_dir =args.img_dir, out_dir=args.output_dir_annot,
+                   math_dir=args.math_dir_annot)
+
     
     except Exception as e:
         logging.error("Exception occurred", exc_info=True)

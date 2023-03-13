@@ -43,5 +43,11 @@ class Arguments:
         self.postprocess = postprocess
         self.gen_math = gen_math
 
+        #Argumentos para visualize
+        self.img_dir = self.dataset_root
+        self.output_dir_annot = os.path.join(self.root_folder,'annotated')
+        self.math_dir_annot = self.output_dir
+        self.char_dir = None
+
 
 
