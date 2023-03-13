@@ -172,7 +172,7 @@ def visualize(img_dir,out_dir,math_dir,char_dir=None):
 
 
     for key in img_sub_dirs.keys():
-        print(img_sub_dirs[key])
+        #print(img_sub_dirs[key])
         # print(math_files[key])
         # print(char_files[key])
         if (key in char_files) and (key in math_files):
@@ -183,4 +183,6 @@ def visualize(img_dir,out_dir,math_dir,char_dir=None):
             annotate_each_file(img_sub_dirs[key], math_files[key], None, out_dir)
         else:
             print(key + " not present in annotations")
+
+    return list(math_files.values()),list(img_sub_dirs.values())
 

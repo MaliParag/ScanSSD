@@ -100,16 +100,15 @@ def test_net_batch(args, net, gpu_id, dataset, transform, thresh):
 
 def test_gtdb(trained_model='weights/AMATH512_e1GTDB.pth',visual_threshold=0.6,cuda=False,verbose = False, exp_name='SSD', model_type = 512, 
                  use_char_info=False,limit = -1, cfg = "hboxes512",batch_size = 16, num_workers = 4, kernel = [1,5], padding = [3,3],neg_mining = True,
-                 stride = 0.1, window = 1200,root_folder = '../../files',stitching_algo='equal',algo_threshold=30,preprocess=False,postprocess=False,gen_math=False):
+                 stride = 0.1, window = 1200,root_folder = '../../files',stitching_algo='equal',algo_threshold=30,preprocess=False,postprocess=False,gen_math=True):
     
     start = time.time()
 
     args = Arguments(trained_model,visual_threshold,cuda, verbose, exp_name, model_type, use_char_info,limit, cfg,
                  batch_size, num_workers, kernel, padding,neg_mining ,stride, window,root_folder,stitching_algo,
                  algo_threshold,preprocess,postprocess,gen_math)
-    """
     print("Criando imagens a partir do PDF...")
-#    create_images_from_pdfs(args.root_folder,args.exp_name)
+    create_images_from_pdfs(args.root_folder,args.exp_name)
     
 
 
@@ -166,8 +165,6 @@ def test_gtdb(trained_model='weights/AMATH512_e1GTDB.pth',visual_threshold=0.6,c
         test_net_batch(args, net, gpu_id, dataset,
                     BaseTransform(args.model_type, (246,246,246)),
                     thresh=args.visual_threshold)
-        """
-    try:
         #stitch
         print('Iniciando Stitch...')
         stitch(args)
@@ -177,8 +174,7 @@ def test_gtdb(trained_model='weights/AMATH512_e1GTDB.pth',visual_threshold=0.6,c
 
         # Visualize
         print('Fazendo Anotações')
-        visualize(img_dir =args.img_dir, out_dir=args.output_dir_annot,
-                   math_dir=args.math_dir_annot)
+        math_file, img_subdir =  visualize(img_dir =args.img_dir, out_dir=args.output_dir_annot,math_dir=args.math_dir_annot)
 
     
     except Exception as e:
