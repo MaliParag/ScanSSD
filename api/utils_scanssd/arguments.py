@@ -49,5 +49,8 @@ class Arguments:
         self.math_dir_annot = self.output_dir
         self.char_dir = None
 
+        #Argumentos para o Crop
+        self.save_crop = os.path.join(root_folder,self.exp_name,'crop')
+        
 
 

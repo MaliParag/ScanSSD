@@ -3,6 +3,7 @@ Arquivo com as funções necessárias para Teste do ScanSSD
 '''
 from __future__ import print_function
 import os,sys
+from PIL import Image
 import torch.backends.cudnn as cudnn
 from ssd import build_ssd
 from utils import draw_boxes, helpers, save_boxes
@@ -19,6 +20,10 @@ from api.utils_scanssd.arguments import Arguments
 from api.utils_scanssd.convert_pdf_to_image import create_images_from_pdfs
 from gtdb.stitch_pages import stitch
 from api.utils_scanssd.visualize_annotations import visualize
+from api.utils_scanssd.crop_resize_image import crop_resize
+
+from pix2tex import cli as pix2tex
+
 
 
 def test_net_batch(args, net, gpu_id, dataset, transform, thresh):
@@ -108,7 +113,7 @@ def test_gtdb(trained_model='weights/AMATH512_e1GTDB.pth',visual_threshold=0.6,c
                  batch_size, num_workers, kernel, padding,neg_mining ,stride, window,root_folder,stitching_algo,
                  algo_threshold,preprocess,postprocess,gen_math)
     print("Criando imagens a partir do PDF...")
-    create_images_from_pdfs(args.root_folder,args.exp_name)
+    file_name = create_images_from_pdfs(args.root_folder,args.exp_name)
     
 
 
@@ -122,7 +127,7 @@ def test_gtdb(trained_model='weights/AMATH512_e1GTDB.pth',visual_threshold=0.6,c
 
     if os.path.exists(os.path.join(args.save_folder)):
         shutil.rmtree(os.path.join(args.save_folder))
-
+    """
     try:
         filepath=os.path.join(args.log_dir, args.exp_name + "_" + str(round(time.time())) + ".log")
         print('Logging to ' + filepath)
@@ -170,11 +175,18 @@ def test_gtdb(trained_model='weights/AMATH512_e1GTDB.pth',visual_threshold=0.6,c
         stitch(args)
         
     
-        
-
         # Visualize
         print('Fazendo Anotações')
         math_file, img_subdir =  visualize(img_dir =args.img_dir, out_dir=args.output_dir_annot,math_dir=args.math_dir_annot)
+        """
+    try:
+        #Crop e Resize
+        print('Cortando as Imagens e Fazendo Resize...')
+        crop_resize(args.dataset_root,args.save_crop,args.output_dir,file_name)
+
+        #Gerando Látex
+        print('Gerando arquivo TXT com Látex...')
+        image2latex(args.save_crop,args.dataset_root)
 
     
     except Exception as e:
@@ -183,4 +195,16 @@ def test_gtdb(trained_model='weights/AMATH512_e1GTDB.pth',visual_threshold=0.6,c
     end = time.time()
     logging.debug('Total time taken ' + str(datetime.timedelta(seconds=end-start)))
     logging.debug("Testing done!")
+
+def image2latex(image_dir,output_dir):
+    f = open(os.path.join(output_dir,'latex.txt'),'w')
+    model = pix2tex.LatexOCR()
+    for name in os.listdir(image_dir):
+        file = os.path.join(image_dir,name)
+        img = Image.open(file)
+        math = model(img)
+        f.write(math+'\n')
+    
+    f.close()
+
 
