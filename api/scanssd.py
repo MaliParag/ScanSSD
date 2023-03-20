@@ -116,7 +116,7 @@ def test_gtdb(trained_model='weights/AMATH512_e1GTDB.pth',visual_threshold=0.6,c
     file_name = create_images_from_pdfs(args.root_folder,args.exp_name)
     
 
-
+    """
     if args.cuda and torch.cuda.is_available():
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
     else:
@@ -127,7 +127,7 @@ def test_gtdb(trained_model='weights/AMATH512_e1GTDB.pth',visual_threshold=0.6,c
 
     if os.path.exists(os.path.join(args.save_folder)):
         shutil.rmtree(os.path.join(args.save_folder))
-    """
+    
     try:
         filepath=os.path.join(args.log_dir, args.exp_name + "_" + str(round(time.time())) + ".log")
         print('Logging to ' + filepath)

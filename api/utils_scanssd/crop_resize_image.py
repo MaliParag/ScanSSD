@@ -10,7 +10,8 @@ def crop_resize(input_dir,output_dir,bouding_dir,file_name,width=100,quality=60)
     list_files = os.listdir(bouding_dir)
     bouding_file = [file for file in list_files if '.math' in file]
     bouding_file = os.path.join(bouding_dir,bouding_file[0])
-    shutil.rmtree(output_dir)
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
     os.makedirs(output_dir)
     if os.path.exists(bouding_file):
         data = np.genfromtxt(bouding_file, delimiter=',')
