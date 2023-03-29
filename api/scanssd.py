@@ -179,14 +179,21 @@ def test_gtdb(trained_model='weights/AMATH512_e1GTDB.pth',visual_threshold=0.6,c
         print('Fazendo Anotações')
         math_file, img_subdir =  visualize(img_dir =args.img_dir, out_dir=args.output_dir_annot,math_dir=args.math_dir_annot)
         """
+    
+    
+    
     try:
+
+        print('Fazendo Anotações')
+        math_file, img_subdir =  visualize(img_dir =args.img_dir, out_dir=args.output_dir_annot,math_dir=args.math_dir_annot)
+
         #Crop e Resize
         print('Cortando as Imagens e Fazendo Resize...')
         crop_resize(args.dataset_root,args.save_crop,args.output_dir,file_name)
 
         #Gerando Látex
-        print('Gerando arquivo TXT com Látex...')
-        image2latex(args.save_crop,args.dataset_root)
+        #print('Gerando arquivo TXT com Látex...')
+        #image2latex(args.save_crop,args.dataset_root)
 
     
     except Exception as e:
@@ -195,6 +202,8 @@ def test_gtdb(trained_model='weights/AMATH512_e1GTDB.pth',visual_threshold=0.6,c
     end = time.time()
     logging.debug('Total time taken ' + str(datetime.timedelta(seconds=end-start)))
     logging.debug("Testing done!")
+
+    return args.home_anno
 
 def image2latex(image_dir,output_dir):
     f = open(os.path.join(output_dir,'latex.txt'),'w')
