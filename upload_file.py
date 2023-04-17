@@ -69,8 +69,31 @@ if file is not None:
             streamlit_columns = st.columns(grid_size)
             for i, image in enumerate(image_group):
                 streamlit_columns[i].image(image)
-        
+
+
+        # API Setup
+        API_KEY = "841943d7281d469ba9233ba8aba57755"
+        RESOURCE_ENDPOINT = "https://alanai.openai.azure.com/"
+
+        # pre-set
+        openai.api_key = API_KEY
+        openai.api_base = RESOURCE_ENDPOINT
+        openai.api_type = 'azure'
+        openai.api_version = '2022-12-01'  # this may change in the future
+
+        # Models
+        deployment_name = "alan-gpt-35-turbo0301"
+
         ## Aqui pode exibir o latex gerado a partir do arquivo
         ## root_folder/uuid_folder/latex.txt
         ## depois para cada linha desse arquivo, fazer uma chamada
         ## para a API do chatGPT e exibir o resultado
+        with open(os.path.join(annot_images, 'latex.txt')) as file:
+            for line in file:
+                start_phrase = f'Identify and Describe the equation: {line}'
+                ###
+                response = openai.Completion.create(engine=deployment_name, prompt=start_phrase, max_tokens=500)
+                text = response['choices'][0]['text'].replace('\n', '').replace(' .', '.').strip()
+                st.write(f"Equation: {line}, result: {text}")
+
+
