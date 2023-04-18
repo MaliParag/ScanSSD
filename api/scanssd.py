@@ -22,7 +22,7 @@ from gtdb.stitch_pages import stitch
 from api.utils_scanssd.visualize_annotations import visualize
 from api.utils_scanssd.crop_resize_image import crop_resize
 
-from pix2tex import cli as pix2tex
+#from pix2tex import cli as pix2tex
 
 
 

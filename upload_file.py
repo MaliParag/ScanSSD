@@ -5,6 +5,7 @@ import base64
 import time
 import glob
 import uuid
+import openai
 
 path_list = ['images','pdf','logs','results','crop','annotations']
 root_folder = '../arquivos'
@@ -20,10 +21,12 @@ def show_pdf(file_path):
 def create_folders(root_folder,path_list):
     #uuid_folder = (str(uuid.uuid4())).split('-',1)[0]
     uuid_folder = 'test'
-    os.mkdir(os.path.join(root_folder,uuid_folder))
+    if not os.path.exists(os.path.join(root_folder,uuid_folder)):
+        os.mkdir(os.path.join(root_folder,uuid_folder))
     paths = [os.path.join(root_folder,uuid_folder,path) for path in path_list]
     for path in paths:
-        os.mkdir(path)
+        if not os.path.exists(path):
+            os.mkdir(path)
     return uuid_folder
 
 uuid_folder = create_folders(root_folder=root_folder,path_list=path_list)
@@ -88,7 +91,7 @@ if file is not None:
         ## root_folder/uuid_folder/latex.txt
         ## depois para cada linha desse arquivo, fazer uma chamada
         ## para a API do chatGPT e exibir o resultado
-        with open(os.path.join(annot_images, 'latex.txt')) as file:
+        with open(os.path.join(root_folder,uuid_folder, 'latex.txt')) as file:
             for line in file:
                 start_phrase = f'Identify and Describe the equation: {line}'
                 ###

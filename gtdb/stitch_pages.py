@@ -230,6 +230,7 @@ def stitch(args):
             final_math = np.concatenate((col[:, np.newaxis], final_math), axis=1)
 
             math_file_path = os.path.join(args.output_dir, pdf_name + '.csv')
+            
 
             
 
@@ -237,9 +238,10 @@ def stitch(args):
                 os.makedirs(os.path.dirname(math_file_path))
 
             math_file = open(math_file_path, 'a')
-           
+            
 
             np.savetxt(math_file, final_math, fmt='%.2f', delimiter=',')
+
 
             math_file.close()
 
