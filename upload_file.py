@@ -91,12 +91,14 @@ if file is not None:
         ## root_folder/uuid_folder/latex.txt
         ## depois para cada linha desse arquivo, fazer uma chamada
         ## para a API do chatGPT e exibir o resultado
-        with open(os.path.join(root_folder,uuid_folder, 'latex.txt')) as file:
-            for line in file:
-                start_phrase = f'Identify and Describe the equation: {line}'
-                ###
-                response = openai.Completion.create(engine=deployment_name, prompt=start_phrase, max_tokens=500)
-                text = response['choices'][0]['text'].replace('\n', '').replace(' .', '.').strip()
-                st.write(f"Equation: {line}, result: {text}")
+        with st.spinner('Aguarde o retorno do GPT...'):
+            with open(os.path.join(root_folder,uuid_folder, 'latex.txt')) as file:
+                for line in file:
+                    start_phrase = f'Identify and Describe the equation: {line}'
+                    ###
+                    response = openai.Completion.create(engine=deployment_name, prompt=start_phrase, max_tokens=500)
+                    text = response['choices'][0]['text'].replace('\n', '').replace(' .', '.').strip()
+                    st.write(f"Equation: {line}, result: {text}")
+        st.success("Sucesso")
 
 
