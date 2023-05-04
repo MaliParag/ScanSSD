@@ -1,0 +1,16 @@
+version: '3.7'
+
+services:
+  scanssd:
+    build:
+      context: ./config
+      dockerfile: Dockerfile
+    image: scanssd
+    container_name: scanssd
+    environment:
+      - DISPLAY=$DISPLAY
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "19054:19054"

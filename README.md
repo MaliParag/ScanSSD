@@ -155,3 +155,31 @@ M. Mahdavi, R. Zanibbi, H. Mouchere, and Utpal Garain (2019). [ICDAR 2019 CROHME
 
 ## Acknowledgements
 - [**Max deGroot**](https://github.com/amdegroot) for providing open-source SSD code
+
+
+
+## Comentários das alterações no branch
+
+Proposta de parâmetros para o funcionamento do test
+
+```Shell
+
+python .\test.py --dataset_root . --trained_model ../pretrained_model/AMATH512_e1GTDB.pth --visual_threshold 0.5 --exp_name test_turing --test_data testing_data_turing --model_type 512 --cfg hboxes512 --padding 3 3 --kernel 1 5 --batch_size 8 --padding 0 2 --stride 1.0
+
+```
+
+- Antes é necessário gerar as imagens de cada página do PDF, que servirá como entrada no modelo. Para tal, é possível utilizar o script convert_pdf_to_image.py em https://github.com/MaliParag/TFD-ICDAR2019, que funcionou sem problemas. Basta inserir como diretório de saída, o diretório "images" deste repositório.
+
+- Observar para os parâmetro --data_root e --test_data, que sugere-se que sejam, respectivamente, o diretório raiz, e um arquivo com o nome do PDF que gerou as imagens, listado por página que será processada, exemplo:
+
+```Shell
+<nome_pdf>/1
+<nome_pdf>/2
+<nome_pdf>/3
+<nome_pdf>/4
+```
+
+- Após o processamento das páginas, um arquivo `<nome_pdf>.csv` é incluído na pasta `.\eval\<exp_name>`, que inclui os bounding box preditos para cada página. Esse arquivo gerado, deve ser utilizado no script `.\gtdb\stitch_patches_pdf.py`, o qual ainda não está funcionando. Esse script é utilizado para geração do arquivo .math, além de ajustar os boxes preditos. Entretanto, o arquivo `<nome_pdf>.csv` pode ser copiado com a extensão `.math`, lembrando de alterar a primeira coluna para número inteiro, apenas retirando as duas casas decimais.
+
+- Com o arquivo `.math` gerado, é possível gerar as imagens de cada página anotada, por meio do script `visualize_annotations.py`, também disponibilizado em https://github.com/MaliParag/TFD-ICDAR2019 . Esse script não apresentou problemas. Um exemplo de anotação efetuada com os parâmetros de teste indicados acima, para o artigo https://dl.acm.org/citation.cfm?id=321991 denominado Emden76, está na pasta `anotado`. 
+
